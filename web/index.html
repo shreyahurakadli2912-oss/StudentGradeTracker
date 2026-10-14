@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Grade Tracker | Enterprise Management</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+                <div class="brand-text">
+                    <h2>GradeTracker</h2>
+                    <span>Java Enterprise</span>
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <button class="nav-btn active" data-tab="dashboard">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Dashboard & Stats</span>
+                </button>
+                <button class="nav-btn" data-tab="students">
+                    <i class="fa-solid fa-users"></i>
+                    <span>All Students</span>
+                </button>
+                <button class="nav-btn" data-tab="import">
+                    <i class="fa-solid fa-file-import"></i>
+                    <span>Bulk Import</span>
+                </button>
+                <button class="nav-btn" data-tab="report">
+                    <i class="fa-solid fa-file-lines"></i>
+                    <span>Grade Report</span>
+                </button>
+                <button class="nav-btn" data-tab="analytics">
+                    <i class="fa-solid fa-sliders"></i>
+                    <span>Grade Scale & Info</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="server-status-pill online" id="server-status-pill">
+                    <i class="fa-solid fa-circle"></i> <span id="server-status-text">Backend Connected</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header Bar -->
+            <header class="top-header">
+                <div class="header-title">
+                    <h1 id="page-title">Dashboard Overview</h1>
+                    <p id="page-subtitle">Manage student marks, track performance, and analyze statistics.</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-primary" id="btn-open-add-modal">
+                        <i class="fa-solid fa-user-plus"></i> Add Student
+                    </button>
+                </div>
+            </header>
+
+            <!-- TAB 1: DASHBOARD & STATS -->
+            <section id="tab-dashboard" class="tab-content active">
+                <div class="stats-grid">
+                    <div class="stat-card blue">
+                        <div class="stat-icon"><i class="fa-solid fa-user-graduate"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-label">Total Students</span>
+                            <h3 class="stat-value" id="stat-total-students">0</h3>
+                        </div>
+                    </div>
+
+                    <div class="stat-card purple">
+                        <div class="stat-icon"><i class="fa-solid fa-calculator"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-label">Class Average</span>
+                            <h3 class="stat-value" id="stat-class-average">0.00%</h3>
+                        </div>
+                    </div>
+
+                    <div class="stat-card green">
+                        <div class="stat-icon"><i class="fa-solid fa-trophy"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-label">Highest Score</span>
+                            <h3 class="stat-value" id="stat-highest-marks">0.00</h3>
+                            <span class="stat-subtext" id="stat-highest-student">None</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card red">
+                        <div class="stat-icon"><i class="fa-solid fa-circle-down"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-label">Lowest Score</span>
+                            <h3 class="stat-value" id="stat-lowest-marks">0.00</h3>
+                            <span class="stat-subtext" id="stat-lowest-student">None</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-row">
+                    <!-- Recent Students Table Preview -->
+                    <div class="card card-table-preview">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-list-check"></i> Recent Students</h3>
+                            <button class="btn-text" id="btn-view-all-redirect">View All <i class="fa-solid fa-arrow-right"></i></button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Student ID</th>
+                                        <th>Name</th>
+                                        <th>Class</th>
+                                        <th>Marks</th>
+                                        <th>Grade</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-dashboard-preview">
+                                    <!-- Rendered dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Grade Distribution Breakdown -->
+                    <div class="card card-grade-distribution">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-chart-column"></i> Grade Distribution</h3>
+                        </div>
+                        <div class="distribution-container">
+                            <div class="dist-bar-item">
+                                <div class="dist-info">
+                                    <span class="badge grade-A">Grade A (90-100)</span>
+                                    <span class="dist-count" id="count-grade-A">0</span>
+                                </div>
+                                <div class="progress-bg"><div class="progress-fill green" id="bar-grade-A" style="width: 0%"></div></div>
+                            </div>
+
+                            <div class="dist-bar-item">
+                                <div class="dist-info">
+                                    <span class="badge grade-B">Grade B (80-89.9)</span>
+                                    <span class="dist-count" id="count-grade-B">0</span>
+                                </div>
+                                <div class="progress-bg"><div class="progress-fill blue" id="bar-grade-B" style="width: 0%"></div></div>
+                            </div>
+
+                            <div class="dist-bar-item">
+                                <div class="dist-info">
+                                    <span class="badge grade-C">Grade C (70-79.9)</span>
+                                    <span class="dist-count" id="count-grade-C">0</span>
+                                </div>
+                                <div class="progress-bg"><div class="progress-fill cyan" id="bar-grade-C" style="width: 0%"></div></div>
+                            </div>
+
+                            <div class="dist-bar-item">
+                                <div class="dist-info">
+                                    <span class="badge grade-D">Grade D (60-69.9)</span>
+                                    <span class="dist-count" id="count-grade-D">0</span>
+                                </div>
+                                <div class="progress-bg"><div class="progress-fill orange" id="bar-grade-D" style="width: 0%"></div></div>
+                            </div>
+
+                            <div class="dist-bar-item">
+                                <div class="dist-info">
+                                    <span class="badge grade-F">Grade F (0-59.9)</span>
+                                    <span class="dist-count" id="count-grade-F">0</span>
+                                </div>
+                                <div class="progress-bg"><div class="progress-fill red" id="bar-grade-F" style="width: 0%"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: ALL STUDENTS -->
+            <section id="tab-students" class="tab-content">
+                <div class="card">
+                    <div class="toolbar">
+                        <div class="search-box">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" id="input-search" placeholder="Search by ID, Name, or Class...">
+                        </div>
+                        <div class="filter-box">
+                            <select id="select-grade-filter">
+                                <option value="ALL">All Grades</option>
+                                <option value="A">Grade A</option>
+                                <option value="B">Grade B</option>
+                                <option value="C">Grade C</option>
+                                <option value="D">Grade D</option>
+                                <option value="F">Grade F</option>
+                            </select>
+                        </div>
+                        <div class="filter-box">
+                            <select id="select-status-filter">
+                                <option value="ALL">All Status</option>
+                                <option value="PASSED">Passed</option>
+                                <option value="FAILED">Failed</option>
+                            </select>
+                        </div>
+                        <div class="filter-box">
+                            <select id="select-sort-by">
+                                <option value="studentId">Sort: ID</option>
+                                <option value="name">Sort: Name</option>
+                                <option value="marks">Sort: Marks</option>
+                                <option value="grade">Sort: Grade</option>
+                            </select>
+                        </div>
+                        <div class="filter-box">
+                            <button id="btn-clear-all" class="btn btn-outline-danger btn-sm" title="Clear all records from database" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); padding: 0.5rem 0.85rem; border-radius: 6px; cursor: pointer;">
+                                <i class="fa-solid fa-trash-can"></i> Clear All Data
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Student ID</th>
+                                    <th>Full Name</th>
+                                    <th>Class</th>
+                                    <th>Marks (/100)</th>
+                                    <th>Grade</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-students-full">
+                                <!-- Rendered dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: BULK IMPORT (FEATURE #5) -->
+            <section id="tab-import" class="tab-content">
+                <div class="card margin-bottom">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-file-csv"></i> Upload Student File (CSV or Excel)</h3>
+                        <a href="/api/students/sample-template" class="btn btn-secondary btn-sm" id="btn-download-sample-template">
+                            <i class="fa-solid fa-download"></i> Download CSV Template
+                        </a>
+                    </div>
+                    
+                    <div class="upload-dropzone" id="upload-dropzone">
+                        <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                        <h4>Drag and drop your file here (Any Format)</h4>
+                        <p class="text-muted">Supports <code>.csv</code>, <code>.xlsx</code>, <code>.pdf</code>, <code>.json</code>, <code>.txt</code>, and any document format</p>
+                        <input type="file" id="file-import-input" accept="*" style="display: none;">
+                        <button class="btn btn-primary margin-top" onclick="document.getElementById('file-import-input').click()">
+                            <i class="fa-solid fa-folder-open"></i> Browse File
+                        </button>
+                    </div>
+                </div>
+
+                <!-- IMPORT PREVIEW CONTAINER (Hidden until file selected) -->
+                <div class="card" id="import-preview-section" style="display: none;">
+                    <div class="card-header border-bottom">
+                        <div>
+                            <h2>Import File Preview & Validation</h2>
+                            <p class="subtitle">Review parsed records before saving to the database</p>
+                        </div>
+                        <div class="header-actions">
+                            <button class="btn btn-secondary" id="btn-cancel-import">Cancel</button>
+                            <button class="btn btn-primary" id="btn-confirm-import">
+                                <i class="fa-solid fa-check"></i> Import Valid Records
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Summary Chips -->
+                    <div class="import-summary-chips">
+                        <div class="chip chip-total">Total Rows: <strong id="chip-total-rows">0</strong></div>
+                        <div class="chip chip-valid">Valid Rows: <strong id="chip-valid-rows">0</strong></div>
+                        <div class="chip chip-invalid">Invalid / Errors: <strong id="chip-invalid-rows">0</strong></div>
+                        <div class="chip chip-duplicate">Duplicates: <strong id="chip-duplicate-rows">0</strong></div>
+                        <button class="btn btn-secondary btn-sm" id="btn-download-rejected-csv" style="display: none;">
+                            <i class="fa-solid fa-file-circle-xmark"></i> Download Rejected CSV
+                        </button>
+                    </div>
+
+                    <!-- Preview Table -->
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th># Row</th>
+                                    <th>Student ID</th>
+                                    <th>Full Name</th>
+                                    <th>Class</th>
+                                    <th>Marks</th>
+                                    <th>Grade</th>
+                                    <th>Validation Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-import-preview">
+                                <!-- Rendered dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: GRADE REPORT -->
+            <section id="tab-report" class="tab-content">
+                <div class="card">
+                    <div class="card-header border-bottom">
+                        <div>
+                            <h2>Official Student Grade Report</h2>
+                            <p class="subtitle">Export complete class records to CSV, Excel, or PDF</p>
+                        </div>
+                        <div class="export-actions">
+                            <a href="/api/students/export/csv" class="btn btn-secondary btn-sm" id="btn-export-csv" target="_blank">
+                                <i class="fa-solid fa-file-csv"></i> Export CSV
+                            </a>
+                            <a href="/api/students/export/excel" class="btn btn-secondary btn-sm" id="btn-export-excel" target="_blank">
+                                <i class="fa-solid fa-file-excel"></i> Export Excel
+                            </a>
+                            <a href="/api/students/export/pdf" class="btn btn-secondary btn-sm" id="btn-export-pdf" target="_blank">
+                                <i class="fa-solid fa-file-pdf"></i> Export PDF
+                            </a>
+                            <button class="btn btn-secondary btn-sm" onclick="window.print()">
+                                <i class="fa-solid fa-print"></i> Print Report
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="report-summary-banner">
+                        <div class="report-summary-item">
+                            <span>Total Enrolled</span>
+                            <strong id="report-total">0</strong>
+                        </div>
+                        <div class="report-summary-item">
+                            <span>Class Average</span>
+                            <strong id="report-average">0.00</strong>
+                        </div>
+                        <div class="report-summary-item">
+                            <span>Highest Score</span>
+                            <strong id="report-highest">0.00</strong>
+                        </div>
+                        <div class="report-summary-item">
+                            <span>Lowest Score</span>
+                            <strong id="report-lowest">0.00</strong>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="data-table report-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Student ID</th>
+                                    <th>Student Name</th>
+                                    <th>Class</th>
+                                    <th>Marks (100)</th>
+                                    <th>Grade</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-grade-report">
+                                <!-- Rendered dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 5: GRADE SCALE & INFO -->
+            <section id="tab-analytics" class="tab-content">
+                <div class="grid-2col">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-award"></i> Grade System Scale</h3>
+                        </div>
+                        <div class="scale-list">
+                            <div class="scale-item green">
+                                <span class="badge grade-A">Grade A</span>
+                                <div>
+                                    <strong>90.0 to 100.0 Marks</strong>
+                                    <p>Outstanding / Excellent Performance</p>
+                                </div>
+                            </div>
+                            <div class="scale-item blue">
+                                <span class="badge grade-B">Grade B</span>
+                                <div>
+                                    <strong>80.0 to 89.9 Marks</strong>
+                                    <p>Very Good / Above Average</p>
+                                </div>
+                            </div>
+                            <div class="scale-item cyan">
+                                <span class="badge grade-C">Grade C</span>
+                                <div>
+                                    <strong>70.0 to 79.9 Marks</strong>
+                                    <p>Good / Average Performance</p>
+                                </div>
+                            </div>
+                            <div class="scale-item orange">
+                                <span class="badge grade-D">Grade D</span>
+                                <div>
+                                    <strong>60.0 to 69.9 Marks</strong>
+                                    <p>Satisfactory / Passing Grade</p>
+                                </div>
+                            </div>
+                            <div class="scale-item red">
+                                <span class="badge grade-F">Grade F</span>
+                                <div>
+                                    <strong>0.0 to 59.9 Marks</strong>
+                                    <p>Needs Improvement / Fail</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-circle-info"></i> System Architecture</h3>
+                        </div>
+                        <div class="project-info-body">
+                            <div class="info-row">
+                                <span>Backend Engine</span>
+                                <strong>Java 21 Spring Boot REST API</strong>
+                            </div>
+                            <div class="info-row">
+                                <span>Persistence Layer</span>
+                                <strong>Spring Data JPA & Hibernate</strong>
+                            </div>
+                            <div class="info-row">
+                                <span>Database Engine</span>
+                                <strong>MySQL / H2 Database Engine</strong>
+                            </div>
+                            <div class="info-row">
+                                <span>Bulk Processing</span>
+                                <strong>Apache POI & Commons CSV</strong>
+                            </div>
+                            <div class="info-row">
+                                <span>PDF Generator</span>
+                                <strong>OpenPDF Document Engine</strong>
+                            </div>
+                            <div class="info-row">
+                                <span>Swagger API Docs</span>
+                                <strong><a href="/h2-console" target="_blank" style="color: var(--primary);">/h2-console</a></strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL: ADD STUDENT -->
+    <div class="modal-backdrop" id="modal-add-student">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-user-plus"></i> Add New Student</h3>
+                <button class="btn-close" id="btn-close-add-modal">&times;</button>
+            </div>
+            <form id="form-add-student">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="add-id">Student ID <span class="required">*</span></label>
+                        <input type="text" id="add-id" placeholder="e.g. S106" required>
+                        <small class="error-msg" id="err-add-id"></small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="add-name">Student Full Name <span class="required">*</span></label>
+                        <input type="text" id="add-name" placeholder="e.g. Frank Wright" required>
+                        <small class="error-msg" id="err-add-name"></small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="add-class">Class / Section</label>
+                        <input type="text" id="add-class" placeholder="e.g. 10A" value="10A">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="add-marks">Marks (0 to 100) <span class="required">*</span></label>
+                        <input type="number" id="add-marks" step="0.1" min="0" max="100" placeholder="e.g. 88.5" required>
+                        <small class="error-msg" id="err-add-marks"></small>
+                    </div>
+
+                    <div class="grade-preview-box">
+                        <span>Calculated Grade:</span>
+                        <span class="badge grade-placeholder" id="add-grade-preview">--</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-add-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Add Student</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: EDIT STUDENT -->
+    <div class="modal-backdrop" id="modal-edit-student">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-user-pen"></i> Edit Student Record</h3>
+                <button class="btn-close" id="btn-close-edit-modal">&times;</button>
+            </div>
+            <form id="form-edit-student">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Student ID (Read-only)</label>
+                        <input type="text" id="edit-id" readonly class="input-readonly">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="edit-name">Student Full Name <span class="required">*</span></label>
+                        <input type="text" id="edit-name" required>
+                        <small class="error-msg" id="err-edit-name"></small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="edit-class">Class / Section</label>
+                        <input type="text" id="edit-class">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="edit-marks">Marks (0 to 100) <span class="required">*</span></label>
+                        <input type="number" id="edit-marks" step="0.1" min="0" max="100" required>
+                        <small class="error-msg" id="err-edit-marks"></small>
+                    </div>
+
+                    <div class="grade-preview-box">
+                        <span>Calculated Grade:</span>
+                        <span class="badge grade-placeholder" id="edit-grade-preview">--</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-edit-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: DELETE CONFIRMATION -->
+    <div class="modal-backdrop" id="modal-delete-confirm">
+        <div class="modal modal-sm">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-triangle-exclamation text-danger"></i> Confirm Deletion</h3>
+                <button class="btn-close" id="btn-close-delete-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete student record <strong id="delete-target-name">--</strong> (ID: <span id="delete-target-id">--</span>)?</p>
+                <p class="text-muted small">This action will remove the record permanently from the database.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="btn-cancel-delete">Cancel</button>
+                <button type="button" class="btn btn-danger" id="btn-confirm-delete"><i class="fa-solid fa-trash"></i> Delete Student</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>

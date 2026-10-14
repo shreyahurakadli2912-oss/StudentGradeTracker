@@ -1,0 +1,3 @@
+S106,Frank Wright,10B,88.5
+S107,Grace Hopper,10A,96.0
+S108,Hank Pym,10C,58.0
