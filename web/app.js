@@ -298,13 +298,13 @@ function initBulkImport() {
         const dt = e.dataTransfer;
         const files = dt.files;
         if (files.length > 0) {
-            handleFileUpload(files[0]);
+            handleFileUpload(files);
         }
     });
 
     fileInput.addEventListener('change', (e) => {
         if (e.target.files.length > 0) {
-            handleFileUpload(e.target.files[0]);
+            handleFileUpload(e.target.files);
         }
     });
 
@@ -353,11 +353,28 @@ function initBulkImport() {
     });
 }
 
-async function handleFileUpload(file) {
-    const formData = new FormData();
-    formData.append('file', file);
+async function handleFileUpload(fileInputSource) {
+    let files = [];
+    if (fileInputSource instanceof FileList || Array.isArray(fileInputSource)) {
+        files = Array.from(fileInputSource);
+    } else if (fileInputSource instanceof File) {
+        files = [fileInputSource];
+    }
+    if (files.length === 0) return;
 
-    showToast(`Uploading and validating ${file.name}...`, 'info');
+    const formData = new FormData();
+    if (files.length === 1) {
+        const single = files[0];
+        formData.append('file', single);
+        if (single.name.toLowerCase().endsWith('.zip')) {
+            showToast(`Extracting and aggregating records from ${single.name}...`, 'info');
+        } else {
+            showToast(`Uploading and validating ${single.name}...`, 'info');
+        }
+    } else {
+        files.forEach(f => formData.append('files', f));
+        showToast(`Uploading and aggregating ${files.length} files in batch...`, 'info');
+    }
 
     try {
         const response = await fetch(`${API_BASE_URL}/import/preview`, {
@@ -367,7 +384,7 @@ async function handleFileUpload(file) {
 
         if (!response.ok) {
             const errData = await response.json();
-            throw new Error(errData.error || 'Failed to parse upload file');
+            throw new Error(errData.error || 'Failed to parse upload file(s)');
         }
 
         parsedPreviewData = await response.json();

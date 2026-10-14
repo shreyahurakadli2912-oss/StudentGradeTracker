@@ -114,13 +114,21 @@ public class StudentController {
 
     /**
      * POST /api/students/import/preview
-     * Parses uploaded CSV or Excel file and returns validation preview WITHOUT committing to DB.
+     * Parses uploaded files (single file, multi-file batch, or ZIP archive) and returns validation preview WITHOUT committing to DB.
      */
     @PostMapping("/import/preview")
-    public ResponseEntity<?> previewImport(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<?> previewImport(@RequestParam(value = "file", required = false) MultipartFile file,
+                                           @RequestParam(value = "files", required = false) List<MultipartFile> files) {
         try {
-            ImportPreviewResultDTO preview = studentService.previewImport(file);
-            return ResponseEntity.ok(preview);
+            if (files != null && !files.isEmpty()) {
+                ImportPreviewResultDTO preview = studentService.previewBatchImport(files);
+                return ResponseEntity.ok(preview);
+            }
+            if (file != null && !file.isEmpty()) {
+                ImportPreviewResultDTO preview = studentService.previewImport(file);
+                return ResponseEntity.ok(preview);
+            }
+            return ResponseEntity.badRequest().body(Map.of("error", "No file uploaded. Please select a file or ZIP archive."));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }

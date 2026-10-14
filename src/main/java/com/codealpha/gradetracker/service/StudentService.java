@@ -52,6 +52,8 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 @Service
 @Transactional
@@ -327,6 +329,8 @@ public class StudentService {
                 rawRows = parsePdfFile(fileBytes);
             } else if (filename.endsWith(".json")) {
                 rawRows = parseJsonFile(new ByteArrayInputStream(fileBytes));
+            } else if (filename.endsWith(".zip")) {
+                rawRows = parseZipArchive(fileBytes);
             } else {
                 try {
                     rawRows = parseCsvFile(new ByteArrayInputStream(fileBytes));
@@ -383,6 +387,65 @@ public class StudentService {
                 if (row.getStatus() == null || row.getStatus().trim().isEmpty()) {
                     row.setStatus(gradeCalculator.calculateStatus(row.getMarks()));
                 }
+                valid++;
+            }
+            result.getRows().add(row);
+        }
+
+        result.setValidCount(valid);
+        result.setInvalidCount(invalid);
+        result.setDuplicateCount(duplicates);
+
+        return result;
+    }
+
+    /**
+     * BATCH UNIVERSAL FILE PARSER: Supports uploading multiple files at once.
+     */
+    @Transactional(readOnly = true)
+    public ImportPreviewResultDTO previewBatchImport(List<MultipartFile> files) {
+        if (files == null || files.isEmpty()) {
+            throw new IllegalArgumentException("No files were provided for upload.");
+        }
+        if (files.size() == 1) {
+            return previewImport(files.get(0));
+        }
+
+        List<ImportRowResultDTO> rawRows = new ArrayList<>();
+        Set<String> seenIds = new HashSet<>();
+        int rowNumber = 1;
+
+        for (MultipartFile file : files) {
+            if (file == null || file.isEmpty()) continue;
+            try {
+                ImportPreviewResultDTO singleResult = previewImport(file);
+                for (ImportRowResultDTO r : singleResult.getRows()) {
+                    String id = r.getStudentId() != null ? r.getStudentId().trim().toUpperCase() : "";
+                    if (!id.isEmpty() && !seenIds.contains(id)) {
+                        seenIds.add(id);
+                        r.setRowNumber(rowNumber++);
+                        rawRows.add(r);
+                    }
+                }
+            } catch (Exception ignored) {
+                // Continue with next file
+            }
+        }
+
+        if (rawRows.isEmpty()) {
+            throw new IllegalArgumentException("No valid student records could be extracted from the uploaded files.");
+        }
+
+        ImportPreviewResultDTO result = new ImportPreviewResultDTO();
+        result.setTotalRows(rawRows.size());
+        int valid = 0;
+        int invalid = 0;
+        int duplicates = 0;
+
+        for (ImportRowResultDTO row : rawRows) {
+            if (!row.isValid()) {
+                invalid++;
+            } else {
                 valid++;
             }
             result.getRows().add(row);
@@ -518,6 +581,77 @@ public class StudentService {
         } catch (Exception e) {
             return parseGenericTextFile(new ByteArrayInputStream(fileBytes));
         }
+    }
+
+    /**
+     * BULK ZIP ARCHIVE PARSER:
+     * Unpacks a ZIP file containing multiple individual student marksheets, PDFs, or spreadsheets
+     * in memory, parses each file, and aggregates all student records into a consolidated roster.
+     */
+    private List<ImportRowResultDTO> parseZipArchive(byte[] zipBytes) throws IOException {
+        List<ImportRowResultDTO> aggregatedRows = new ArrayList<>();
+        Set<String> seenIds = new HashSet<>();
+        int rowNumber = 1;
+
+        try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zipBytes))) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                if (entry.isDirectory()) {
+                    zis.closeEntry();
+                    continue;
+                }
+
+                String entryName = entry.getName().toLowerCase();
+                // Skip OS-generated metadata like __MACOSX, .DS_Store, thumbs.db
+                if (entryName.contains("__macosx") || entryName.endsWith(".ds_store") || entryName.endsWith("thumbs.db")) {
+                    zis.closeEntry();
+                    continue;
+                }
+
+                ByteArrayOutputStream entryBaos = new ByteArrayOutputStream();
+                byte[] buffer = new byte[8192];
+                int len;
+                while ((len = zis.read(buffer)) > 0) {
+                    entryBaos.write(buffer, 0, len);
+                }
+                byte[] entryBytes = entryBaos.toByteArray();
+                zis.closeEntry();
+
+                if (entryBytes.length == 0) continue;
+
+                List<ImportRowResultDTO> entryRows = new ArrayList<>();
+                try {
+                    if (entryName.endsWith(".xlsx") || entryName.endsWith(".xls")) {
+                        entryRows = parseExcelFile(new ByteArrayInputStream(entryBytes));
+                    } else if (entryName.endsWith(".pdf")) {
+                        entryRows = parsePdfFile(entryBytes);
+                    } else if (entryName.endsWith(".json")) {
+                        entryRows = parseJsonFile(new ByteArrayInputStream(entryBytes));
+                    } else if (entryName.endsWith(".csv")) {
+                        entryRows = parseCsvFile(new ByteArrayInputStream(entryBytes));
+                    } else {
+                        // TXT or other text document
+                        entryRows = parseGenericTextFile(new ByteArrayInputStream(entryBytes));
+                    }
+                } catch (Exception ignored) {
+                    try {
+                        entryRows = parseGenericTextFile(new ByteArrayInputStream(entryBytes));
+                    } catch (Exception e) {
+                        // Skip unparseable entry
+                    }
+                }
+
+                for (ImportRowResultDTO r : entryRows) {
+                    String id = r.getStudentId() != null ? r.getStudentId().trim().toUpperCase() : "";
+                    if (!id.isEmpty() && !seenIds.contains(id)) {
+                        seenIds.add(id);
+                        r.setRowNumber(rowNumber++);
+                        aggregatedRows.add(r);
+                    }
+                }
+            }
+        }
+        return aggregatedRows;
     }
 
     /**
@@ -780,6 +914,13 @@ public class StudentService {
             return rows;
         }
 
+        // Strategy 6: Individual Student Marks Card (e.g. individual PDF result / scorecard)
+        ImportRowResultDTO singleCard = extractIndividualStudentCard(rawText, currentClass, rowNum);
+        if (singleCard != null && !seenIds.contains(singleCard.getStudentId())) {
+            rows.add(singleCard);
+            return rows;
+        }
+
         // --- PASS 2: FALLBACK (Single Student Course List / Transcript only if 0 students found) ---
         Pattern courseLinePattern = Pattern.compile("(?i)^\\s*([A-Z0-9_-]{3,12})\\s+(.+?)\\s+(\\d{1,3})\\s+(\\d{1,3})\\s+(\\d{1,3})\\s*$");
         for (String line : lines) {
@@ -808,6 +949,97 @@ public class StudentService {
         }
 
         return rows;
+    }
+
+    /**
+     * Extracts a student record from an individual marksheet / scorecard document (e.g., individual PDF result).
+     */
+    private ImportRowResultDTO extractIndividualStudentCard(String rawText, String defaultClass, int rowNum) {
+        if (rawText == null || rawText.trim().isEmpty()) {
+            return null;
+        }
+
+        // Must find an explicit USN or Student ID label
+        Pattern idLabelPattern = Pattern.compile("(?i)(?:USN|Student\\s*ID|Roll\\s*No\\.?|Reg\\.?\\s*No\\.?)\\s*[:=]\\s*([0-9][A-Za-z]{2}[0-9]{2}[A-Za-z0-9]{4,6}|[A-Za-z0-9_-]{3,15})");
+        Matcher mId = idLabelPattern.matcher(rawText);
+        if (!mId.find()) {
+            return null;
+        }
+        String id = mId.group(1).trim().toUpperCase();
+        if (!isNotBlacklistedId(id)) {
+            return null;
+        }
+
+        // Must find Student Name
+        Pattern namePattern = Pattern.compile("(?i)(?:Student\\s*Name|Name\\s*of\\s*(?:the\\s*)?Student|Candidate\\s*Name|Name)\\s*[:=]\\s*([A-Za-z\\s.'-]+?)(?:\\r?\\n|$)");
+        Matcher mName = namePattern.matcher(rawText);
+        String name = "";
+        if (mName.find()) {
+            name = formatStudentName(mName.group(1).trim());
+        }
+        if (name.isEmpty() || name.length() < 2) {
+            return null;
+        }
+
+        // Find Semester or Class
+        String className = defaultClass != null ? defaultClass : "VI-A";
+        Pattern classPattern = Pattern.compile("(?i)(?:Sem(?:ester)?|Class|Section)\\s*[:=]?\\s*([A-Za-z0-9-]+)");
+        Matcher mClass = classPattern.matcher(rawText);
+        if (mClass.find()) {
+            String semVal = mClass.group(1).trim().toUpperCase();
+            if (semVal.length() <= 8) {
+                className = semVal;
+            }
+        }
+
+        // Find Marks / Percentage
+        String marksStr = null;
+        // Priority 1: Percentage
+        Pattern pctPattern = Pattern.compile("(?i)(?:Percentage|Aggregate|Percent|%|Marks\\s*Percentage)\\s*[:=]?\\s*(\\d{1,3}(?:\\.\\d+)?)");
+        Matcher mPct = pctPattern.matcher(rawText);
+        if (mPct.find()) {
+            marksStr = mPct.group(1).trim();
+        } else {
+            // Priority 2: Total Marks / Max Marks ratio (e.g. 825 / 900)
+            Pattern totalPattern = Pattern.compile("(?i)(?:Total\\s*Marks|Grand\\s*Total|Total)\\s*[:=]?\\s*(\\d{2,4}(?:\\.\\d+)?)\\s*[/]\\s*(\\d{2,4}(?:\\.\\d+)?)");
+            Matcher mTotal = totalPattern.matcher(rawText);
+            if (mTotal.find()) {
+                double obtained = Double.parseDouble(mTotal.group(1));
+                double max = Double.parseDouble(mTotal.group(2));
+                if (max > 0) {
+                    double pct = (obtained / max) * 100.0;
+                    marksStr = String.format(Locale.US, "%.2f", pct);
+                }
+            } else {
+                // Priority 3: Simple Total (if <= 100)
+                Pattern simpleTotal = Pattern.compile("(?i)(?:Marks|Score|Total)\\s*[:=]?\\s*(\\d{1,3}(?:\\.\\d+)?)");
+                Matcher mSimple = simpleTotal.matcher(rawText);
+                if (mSimple.find()) {
+                    marksStr = mSimple.group(1).trim();
+                }
+            }
+        }
+
+        if (marksStr == null) {
+            return null;
+        }
+
+        ImportRowResultDTO row = validateRow(rowNum, id, name, className, marksStr);
+        if (row != null) {
+            // Check status (PASS / FAIL)
+            Pattern statusPattern = Pattern.compile("(?i)(?:Result|Status)\\s*[:=]?\\s*(PASS|FAIL|FAILED)");
+            Matcher mStatus = statusPattern.matcher(rawText);
+            if (mStatus.find()) {
+                String st = mStatus.group(1).toUpperCase();
+                if (st.contains("FAIL")) {
+                    row.setStatus("FAILED");
+                } else if (st.contains("PASS")) {
+                    row.setStatus("PASSED");
+                }
+            }
+            return row;
+        }
+        return null;
     }
 
     private boolean isHeaderOrAddressLine(String line) {

@@ -250,7 +250,7 @@
             <section id="tab-import" class="tab-content">
                 <div class="card margin-bottom">
                     <div class="card-header">
-                        <h3><i class="fa-solid fa-file-csv"></i> Upload Student File (CSV or Excel)</h3>
+                        <h3><i class="fa-solid fa-file-arrow-up"></i> Upload Student Results (Single, Multi-file, or Bulk ZIP)</h3>
                         <a href="/api/students/sample-template" class="btn btn-secondary btn-sm" id="btn-download-sample-template">
                             <i class="fa-solid fa-download"></i> Download CSV Template
                         </a>
@@ -258,11 +258,11 @@
                     
                     <div class="upload-dropzone" id="upload-dropzone">
                         <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
-                        <h4>Drag and drop your file here (Any Format)</h4>
-                        <p class="text-muted">Supports <code>.csv</code>, <code>.xlsx</code>, <code>.pdf</code>, <code>.json</code>, <code>.txt</code>, and any document format</p>
-                        <input type="file" id="file-import-input" accept="*" style="display: none;">
+                        <h4>Drag and drop your files or ZIP archive here</h4>
+                        <p class="text-muted">Supports <code>.zip</code> (bulk archive of individual results), <code>.pdf</code> (class marksheets or individual cards), <code>.csv</code>, <code>.xlsx</code>, <code>.json</code>, <code>.txt</code> & multi-file selection</p>
+                        <input type="file" id="file-import-input" accept=".csv,.xlsx,.xls,.txt,.pdf,.json,.zip" multiple style="display: none;">
                         <button class="btn btn-primary margin-top" onclick="document.getElementById('file-import-input').click()">
-                            <i class="fa-solid fa-folder-open"></i> Browse File
+                            <i class="fa-solid fa-folder-open"></i> Browse Files / ZIP Archive
                         </button>
                     </div>
                 </div>
