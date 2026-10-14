@@ -10,6 +10,8 @@ let students = [];
 let parsedPreviewData = null;
 let activeTab = 'dashboard';
 let studentToDelete = null;
+let activeCategory = 'ALL';      // 'ALL' | 'VTU' | 'PUC' | 'SCHOOL' | 'DEGREE'
+let activeSubcategory = 'ALL';   // 'ALL' | 'vtu-4th' | 'vtu-3rd' | ...
 
 // DOM Initialization
 document.addEventListener('DOMContentLoaded', () => {
@@ -151,10 +153,151 @@ function updateExportLinks(queryString) {
 
 // Render Application UI
 function renderApp() {
+    updateCategoryCounts();
     renderDashboardPreview();
     renderStudentsTable();
     renderGradeReport();
     loadStatsFromBackend();
+}
+
+function updateCategoryCounts() {
+    const counts = { ALL: students.length, VTU: 0, PUC: 0, SCHOOL: 0, DEGREE: 0 };
+    students.forEach(s => {
+        const catInfo = getStudentAcademicCategory(s);
+        if (counts[catInfo.category] !== undefined) {
+            counts[catInfo.category]++;
+        }
+    });
+
+    ['all', 'vtu', 'puc', 'school', 'degree'].forEach(c => {
+        const key = c.toUpperCase();
+        const fullEl = document.getElementById(`cat-count-${c}`);
+        if (fullEl) fullEl.textContent = counts[key] || 0;
+        const dashEl = document.getElementById(`dash-count-${c}`);
+        if (dashEl) dashEl.textContent = counts[key] || 0;
+    });
+}
+
+function getFilteredStudents() {
+    return students.filter(s => {
+        const catInfo = getStudentAcademicCategory(s);
+
+        // Filter by Broad Category Pill
+        if (activeCategory !== 'ALL') {
+            if (activeCategory === 'DEGREE') {
+                if (catInfo.category !== 'DEGREE' && catInfo.subcategory !== 'degree-autonomous') return false;
+            } else if (catInfo.category !== activeCategory) {
+                return false;
+            }
+        }
+
+        // Filter by Subcategory / Semester Dropdown
+        if (activeSubcategory !== 'ALL') {
+            if (activeSubcategory === 'VTU') {
+                if (catInfo.category !== 'VTU') return false;
+            } else if (activeSubcategory === 'PUC') {
+                if (catInfo.category !== 'PUC') return false;
+            } else if (activeSubcategory === 'SCHOOL') {
+                if (catInfo.category !== 'SCHOOL') return false;
+            } else if (activeSubcategory === 'DEGREE') {
+                if (catInfo.category !== 'DEGREE' && catInfo.subcategory !== 'degree-autonomous') return false;
+            } else if (catInfo.subcategory !== activeSubcategory) {
+                return false;
+            }
+        }
+
+        return true;
+    });
+}
+
+function getStudentAcademicCategory(s) {
+    const cls = (s.className || '').toLowerCase().trim();
+    const id = (s.studentId || '').toUpperCase().trim();
+    const brk = (s.subjectBreakdown || '').toLowerCase();
+
+    // Check for VTU USN pattern (e.g. 1RG23CS001, 1BM22EC010, 1MS21CS045) or explicit VTU indicators
+    const isVtuId = /^1[A-Z]{2}\d{2}[A-Z]{2}\d{3}$/i.test(id) || /^1[A-Z]{2}\d{2}/i.test(id);
+    const hasVtuIndicator = cls.includes('vtu') || brk.includes('vtu') || /21cs\d{2}|18cs\d{2}|22cs\d{2}/i.test(brk) || isVtuId;
+
+    // 1. VTU 4th Sem (Math IV, DAA, Microcontrollers, OS, Labs)
+    if (cls.includes('4th') || cls.includes('sem 4') || cls.includes('semester 4') || cls.includes('iv sem') || brk.includes('21cs4') || brk.includes('daa') || brk.includes('microcontroller') || brk.includes('math-iv') || brk.includes('math iv')) {
+        if (hasVtuIndicator || cls.includes('sem')) {
+            return { category: 'VTU', subcategory: 'vtu-4th', badgeText: '🏛️ VTU 4th Sem', badgeClass: 'tag-vtu' };
+        }
+    }
+
+    // 2. VTU 3rd Sem (Transform Calculus, Data Structures, ADE, COA)
+    if (cls.includes('3rd') || cls.includes('sem 3') || cls.includes('semester 3') || cls.includes('iii sem') || brk.includes('21cs3') || brk.includes('data structure') || brk.includes('21mat31')) {
+        if (hasVtuIndicator || cls.includes('sem')) {
+            return { category: 'VTU', subcategory: 'vtu-3rd', badgeText: '🏛️ VTU 3rd Sem', badgeClass: 'tag-vtu' };
+        }
+    }
+
+    // 3. VTU 6th Sem (Software Eng, Full Stack Dev, Computer Networks)
+    if (cls.includes('6th') || cls.includes('sem 6') || cls.includes('semester 6') || cls.includes('vi sem') || cls.includes('vi-a') || brk.includes('21cs6') || brk.includes('full stack') || brk.includes('software engineering')) {
+        if (hasVtuIndicator || cls.includes('sem')) {
+            return { category: 'VTU', subcategory: 'vtu-6th', badgeText: '🏛️ VTU 6th Sem', badgeClass: 'tag-vtu' };
+        }
+    }
+
+    // 4. VTU 5th Sem (Automata, Computer Networks, DBMS, AI & ML)
+    if (cls.includes('5th') || cls.includes('sem 5') || cls.includes('semester 5') || cls.includes('v sem') || brk.includes('21cs5') || brk.includes('automata') || brk.includes('dbms')) {
+        if (hasVtuIndicator || cls.includes('sem')) {
+            return { category: 'VTU', subcategory: 'vtu-5th', badgeText: '🏛️ VTU 5th Sem', badgeClass: 'tag-vtu' };
+        }
+    }
+
+    // 5. VTU 1st & 2nd Sem (Physics/Chemistry Cycle)
+    if (cls.includes('1st') || cls.includes('2nd') || cls.includes('sem 1') || cls.includes('sem 2') || cls.includes('i sem') || cls.includes('ii sem') || brk.includes('21mat11') || brk.includes('21phy')) {
+        if (hasVtuIndicator || cls.includes('sem')) {
+            return { category: 'VTU', subcategory: 'vtu-1st-2nd', badgeText: '🏛️ VTU 1st/2nd Sem', badgeClass: 'tag-vtu' };
+        }
+    }
+
+    // 6. VTU 7th & 8th Sem
+    if (cls.includes('7th') || cls.includes('8th') || cls.includes('vii') || cls.includes('viii') || brk.includes('21cs7') || brk.includes('21cs8')) {
+        if (hasVtuIndicator || cls.includes('sem')) {
+            return { category: 'VTU', subcategory: 'vtu-7th-8th', badgeText: '🏛️ VTU Final Year', badgeClass: 'tag-vtu' };
+        }
+    }
+
+    // Generic VTU
+    if (hasVtuIndicator || cls.includes('b.e') || cls.includes('btech') || cls.includes('engineering') || cls.includes('sem')) {
+        return { category: 'VTU', subcategory: 'vtu-all', badgeText: '🏛️ VTU Engineering', badgeClass: 'tag-vtu' };
+    }
+
+    // PUC / 11th & 12th
+    if (cls.includes('puc') || cls.includes('11th') || cls.includes('12th') || cls.includes('+2') || cls.includes('plus two') || brk.includes('pcmb') || brk.includes('pcmc')) {
+        if (cls.includes('comm') || brk.includes('accountancy') || brk.includes('business studies')) {
+            return { category: 'PUC', subcategory: 'puc-commerce', badgeText: '🎒 PUC Commerce', badgeClass: 'tag-puc' };
+        }
+        if (cls.includes('art') || brk.includes('history') || brk.includes('political science')) {
+            return { category: 'PUC', subcategory: 'puc-arts', badgeText: '🎒 PUC Arts', badgeClass: 'tag-puc' };
+        }
+        return { category: 'PUC', subcategory: 'puc-science', badgeText: '🎒 PUC Science', badgeClass: 'tag-puc' };
+    }
+
+    // Autonomous Degree (B.Sc / BCA / B.Com / BBA)
+    if (cls.includes('degree') || cls.includes('autonomous') || cls.includes('bca') || cls.includes('b.sc') || cls.includes('b.com') || cls.includes('bba')) {
+        return { category: 'DEGREE', subcategory: 'degree-autonomous', badgeText: '🎓 Autonomous Degree', badgeClass: 'tag-vtu' };
+    }
+
+    // School (CBSE, ICSE, State, 1st-10th)
+    if (cls.includes('cbse') || brk.includes('cbse') || brk.includes('information technology (skill)')) {
+        return { category: 'SCHOOL', subcategory: 'school-cbse', badgeText: '🏫 CBSE Board', badgeClass: 'tag-school' };
+    }
+    if (cls.includes('icse') || brk.includes('icse')) {
+        return { category: 'SCHOOL', subcategory: 'school-icse', badgeText: '🏫 ICSE Board', badgeClass: 'tag-school' };
+    }
+    if (cls.includes('state') || cls.includes('sslc') || cls.includes('kseeb') || brk.includes('first language (kannada')) {
+        return { category: 'SCHOOL', subcategory: 'school-state', badgeText: '🏫 State Board', badgeClass: 'tag-school' };
+    }
+    if (/^\d{1,2}[a-z]?$/i.test(cls) || cls.includes('class') || cls.includes('grade') || cls.includes('std') || cls.includes('school')) {
+        return { category: 'SCHOOL', subcategory: 'school-state', badgeText: `🏫 School (${s.className || 'General'})`, badgeClass: 'tag-school' };
+    }
+
+    // Fallback General
+    return { category: 'OTHER', subcategory: 'general', badgeText: `📚 ${s.className || 'General'}`, badgeClass: 'tag-general' };
 }
 
 function renderStatsFromDTO(stats) {
@@ -181,18 +324,20 @@ function renderDashboardPreview() {
     const tbody = document.getElementById('tbody-dashboard-preview');
     tbody.innerHTML = '';
 
-    if (students.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">No students found.</td></tr>`;
+    const filtered = getFilteredStudents();
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted" style="padding: 1.5rem;">No students found for this selection.</td></tr>`;
         return;
     }
 
-    const recent = students.slice(0, 5);
+    const recent = filtered.slice(0, 5);
     recent.forEach(s => {
+        const catInfo = getStudentAcademicCategory(s);
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td><strong>${escapeHtml(s.studentId)}</strong></td>
             <td>${escapeHtml(s.name)}</td>
-            <td>${escapeHtml(s.className || '10A')}</td>
+            <td><span class="program-tag ${catInfo.badgeClass}">${catInfo.badgeText}</span></td>
             <td>${parseFloat(s.marks).toFixed(2)}</td>
             <td><span class="badge ${getGradeBadgeClass(s.grade)}">${s.grade}</span></td>
             <td>
@@ -209,17 +354,22 @@ function renderStudentsTable() {
     const tbody = document.getElementById('tbody-students-full');
     tbody.innerHTML = '';
 
-    if (students.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No matching students found.</td></tr>`;
+    const filtered = getFilteredStudents();
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2.5rem;"><i class="fa-solid fa-filter-circle-xmark" style="font-size: 1.8rem; display: block; margin-bottom: 0.5rem; opacity: 0.6;"></i>No students found matching selected academic option.</td></tr>`;
         return;
     }
 
-    students.forEach(s => {
+    filtered.forEach(s => {
+        const catInfo = getStudentAcademicCategory(s);
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td><strong>${escapeHtml(s.studentId)}</strong></td>
             <td>${escapeHtml(s.name)}</td>
-            <td>${escapeHtml(s.className || '10A')}</td>
+            <td>
+                <span class="program-tag ${catInfo.badgeClass}">${catInfo.badgeText}</span>
+                <small style="color: var(--text-muted); display: block; margin-top: 2px;">Class: ${escapeHtml(s.className || 'General')}</small>
+            </td>
             <td>${parseFloat(s.marks).toFixed(2)}</td>
             <td><span class="badge ${getGradeBadgeClass(s.grade)}">Grade ${s.grade}</span></td>
             <td>${s.status === 'PASSED' ? '<span style="color: #34d399; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> Passed</span>' : '<span style="color: #fb7185; font-weight: 600;"><i class="fa-solid fa-triangle-exclamation"></i> Failed</span>'}</td>
@@ -237,19 +387,20 @@ function renderGradeReport() {
     const tbody = document.getElementById('tbody-grade-report');
     tbody.innerHTML = '';
 
-    const total = students.length;
+    const filtered = getFilteredStudents();
+    const total = filtered.length;
     document.getElementById('report-total').textContent = total;
 
     if (total === 0) {
         document.getElementById('report-average').textContent = '0.00';
         document.getElementById('report-highest').textContent = '0.00';
         document.getElementById('report-lowest').textContent = '0.00';
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No students registered.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No students registered for this selection.</td></tr>`;
         return;
     }
 
     let sum = 0, max = -Infinity, min = Infinity;
-    students.forEach(s => {
+    filtered.forEach(s => {
         const m = parseFloat(s.marks);
         sum += m;
         if (m > max) max = m;
@@ -260,13 +411,14 @@ function renderGradeReport() {
     document.getElementById('report-highest').textContent = max.toFixed(2);
     document.getElementById('report-lowest').textContent = min.toFixed(2);
 
-    students.forEach((s, idx) => {
+    filtered.forEach((s, idx) => {
+        const catInfo = getStudentAcademicCategory(s);
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${idx + 1}</td>
             <td><strong>${escapeHtml(s.studentId)}</strong></td>
             <td>${escapeHtml(s.name)}</td>
-            <td>${escapeHtml(s.className || '10A')}</td>
+            <td><span class="program-tag ${catInfo.badgeClass}">${catInfo.badgeText}</span></td>
             <td>${parseFloat(s.marks).toFixed(2)}</td>
             <td><span class="badge ${getGradeBadgeClass(s.grade)}">Grade ${s.grade}</span></td>
             <td>${s.status === 'PASSED' ? '<span style="color: #34d399;">Passed</span>' : '<span style="color: #fb7185;">Failed</span>'}</td>
@@ -463,6 +615,44 @@ function initSearchFilter() {
     const statusSelect = document.getElementById('select-status-filter');
     const sortSelect = document.getElementById('select-sort-by');
     const searchInput = document.getElementById('input-search');
+    const catSelect = document.getElementById('select-category-filter');
+
+    // 1. Academic Category Navigation Pills (Tab 2 and Dashboard)
+    function setupCatPills(containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.querySelectorAll('.cat-pill').forEach(pill => {
+            pill.addEventListener('click', () => {
+                const cat = pill.dataset.category || 'ALL';
+                activeCategory = cat;
+                activeSubcategory = 'ALL';
+                if (catSelect) catSelect.value = (cat === 'ALL') ? 'ALL' : cat;
+                updatePillUI();
+                renderApp();
+            });
+        });
+    }
+    setupCatPills('student-cat-pills');
+    setupCatPills('dash-cat-pills');
+
+    // 2. Academic Program / Semester Dropdown Selector
+    catSelect?.addEventListener('change', () => {
+        const val = catSelect.value;
+        activeSubcategory = val;
+        if (['VTU', 'PUC', 'SCHOOL', 'DEGREE', 'ALL'].includes(val)) {
+            activeCategory = val;
+        } else if (val.startsWith('vtu-')) {
+            activeCategory = 'VTU';
+        } else if (val.startsWith('puc-')) {
+            activeCategory = 'PUC';
+        } else if (val.startsWith('school-')) {
+            activeCategory = 'SCHOOL';
+        } else if (val.startsWith('degree-')) {
+            activeCategory = 'DEGREE';
+        }
+        updatePillUI();
+        renderApp();
+    });
 
     statusSelect?.addEventListener('change', () => {
         // Automatically resolve impossible conflicting filter: Grade F cannot be Passed
@@ -488,12 +678,117 @@ function initSearchFilter() {
     searchInput?.addEventListener('change', loadStudentsFromBackend);
 }
 
+function updatePillUI() {
+    ['student-cat-pills', 'dash-cat-pills'].forEach(cid => {
+        const container = document.getElementById(cid);
+        if (!container) return;
+        container.querySelectorAll('.cat-pill').forEach(p => {
+            const isMatch = (p.dataset.category === activeCategory);
+            p.classList.toggle('active', isMatch);
+        });
+    });
+}
+
 // ==========================================
 // ACADEMIC CURRICULUM TEMPLATES & ENGINE
 // ==========================================
 const CURRICULUM_TEMPLATES = {
+    'vtu-4th': {
+        name: 'VTU Engineering (4th Semester CSE/ISE)',
+        defaultClass: 'VTU 4th Sem CSE',
+        passingPct: 40,
+        subjects: [
+            { name: 'Maths-IV / Complex Analysis & Probability (21MAT41)', max: 100, pass: 40, obtained: 86 },
+            { name: 'Design and Analysis of Algorithms (21CS42)', max: 100, pass: 40, obtained: 88 },
+            { name: 'Microcontroller & Embedded Systems (21CS43)', max: 100, pass: 40, obtained: 85 },
+            { name: 'Operating Systems (21CS44)', max: 100, pass: 40, obtained: 89 },
+            { name: 'DAA Laboratory (21CSL46)', max: 100, pass: 40, obtained: 95 },
+            { name: 'Microcontroller & Embedded Lab (21CSL47)', max: 100, pass: 40, obtained: 94 },
+            { name: 'Biology For Engineers (21BE45)', max: 100, pass: 40, obtained: 82 }
+        ]
+    },
+    'vtu-3rd': {
+        name: 'VTU Engineering (3rd Semester CSE/ISE)',
+        defaultClass: 'VTU 3rd Sem CSE',
+        passingPct: 40,
+        subjects: [
+            { name: 'Transform Calculus & Fourier Series (21MAT31)', max: 100, pass: 40, obtained: 84 },
+            { name: 'Data Structures and Applications (21CS32)', max: 100, pass: 40, obtained: 87 },
+            { name: 'Analog and Digital Electronics (21CS33)', max: 100, pass: 40, obtained: 82 },
+            { name: 'Computer Organization & Architecture (21CS34)', max: 100, pass: 40, obtained: 85 },
+            { name: 'Data Structures Laboratory (21CSL35)', max: 100, pass: 40, obtained: 95 },
+            { name: 'Analog & Digital Electronics Lab (21CSL36)', max: 100, pass: 40, obtained: 92 }
+        ]
+    },
+    'vtu-6th': {
+        name: 'VTU Engineering (6th Semester CSE/ISE)',
+        defaultClass: 'VTU 6th Sem CSE',
+        passingPct: 40,
+        subjects: [
+            { name: 'Software Engineering (21CS61)', max: 100, pass: 40, obtained: 85 },
+            { name: 'Full Stack Development (21CS62)', max: 100, pass: 40, obtained: 88 },
+            { name: 'Computer Networks (21CS63)', max: 100, pass: 40, obtained: 84 },
+            { name: 'Professional Elective (21CS64x)', max: 100, pass: 40, obtained: 82 },
+            { name: 'Open Elective (21CS65x)', max: 100, pass: 40, obtained: 86 },
+            { name: 'Full Stack Dev Lab (21CSL66)', max: 100, pass: 40, obtained: 95 },
+            { name: 'Mini Project (21CSP68)', max: 100, pass: 40, obtained: 96 }
+        ]
+    },
+    'degree-vtu': {
+        name: 'VTU Engineering (6th Sem CSE)',
+        defaultClass: 'VTU 6th Sem CSE',
+        passingPct: 40,
+        subjects: [
+            { name: 'Software Engineering (21CS61)', max: 100, pass: 40, obtained: 85 },
+            { name: 'Full Stack Development (21CS62)', max: 100, pass: 40, obtained: 88 },
+            { name: 'Computer Networks (21CS63)', max: 100, pass: 40, obtained: 84 },
+            { name: 'Professional Elective (21CS64x)', max: 100, pass: 40, obtained: 82 },
+            { name: 'Open Elective (21CS65x)', max: 100, pass: 40, obtained: 86 },
+            { name: 'Full Stack Dev Lab (21CSL66)', max: 100, pass: 40, obtained: 95 },
+            { name: 'Mini Project (21CSP68)', max: 100, pass: 40, obtained: 96 }
+        ]
+    },
+    'vtu-5th': {
+        name: 'VTU Engineering (5th Semester CSE/ISE)',
+        defaultClass: 'VTU 5th Sem CSE',
+        passingPct: 40,
+        subjects: [
+            { name: 'Automata Theory & Computability (21CS51)', max: 100, pass: 40, obtained: 83 },
+            { name: 'Computer Networks & Security (21CS52)', max: 100, pass: 40, obtained: 86 },
+            { name: 'Database Management Systems (21CS53)', max: 100, pass: 40, obtained: 89 },
+            { name: 'Artificial Intelligence & Machine Learning (21CS54)', max: 100, pass: 40, obtained: 87 },
+            { name: 'DBMS Laboratory with Mini Project (21CSL55)', max: 100, pass: 40, obtained: 95 },
+            { name: 'Research Methodology & IPR (21RMI56)', max: 100, pass: 40, obtained: 90 }
+        ]
+    },
+    'vtu-1st-2nd': {
+        name: 'VTU Engineering (1st & 2nd Sem P/C Cycle)',
+        defaultClass: 'VTU 1st/2nd Sem',
+        passingPct: 40,
+        subjects: [
+            { name: 'Mathematics for Engineering (21MAT11)', max: 100, pass: 40, obtained: 85 },
+            { name: 'Applied Physics / Chemistry (21PHY12)', max: 100, pass: 40, obtained: 82 },
+            { name: 'Principles of Programming using C / Python (21PSP13)', max: 100, pass: 40, obtained: 90 },
+            { name: 'Basic Electrical / Electronics Engineering (21ELE14)', max: 100, pass: 40, obtained: 84 },
+            { name: 'Engineering Visualization / CAED (21EVN15)', max: 100, pass: 40, obtained: 88 },
+            { name: 'Programming Laboratory (21CPL16)', max: 100, pass: 40, obtained: 96 }
+        ]
+    },
+    'vtu-7th-8th': {
+        name: 'VTU Engineering (7th & 8th Sem Final Year)',
+        defaultClass: 'VTU Final Year (7th/8th Sem)',
+        passingPct: 40,
+        subjects: [
+            { name: 'Cloud Computing & Virtualization (21CS71)', max: 100, pass: 40, obtained: 88 },
+            { name: 'Big Data Analytics (21CS72)', max: 100, pass: 40, obtained: 85 },
+            { name: 'Major Project Work Phase-1 & 2', max: 100, pass: 40, obtained: 98 },
+            { name: 'Technical Seminar', max: 100, pass: 40, obtained: 95 },
+            { name: 'Industry Internship', max: 100, pass: 40, obtained: 96 }
+        ]
+    },
     'school-state': {
         name: 'Class 1–10th (State Board - 6 Subjects)',
+        defaultClass: 'Class 10 State',
         passingPct: 35,
         subjects: [
             { name: 'First Language (Kannada/Regional)', max: 125, pass: 44, obtained: 100 },
@@ -506,6 +801,7 @@ const CURRICULUM_TEMPLATES = {
     },
     'school-cbse': {
         name: 'Class 1–10th (CBSE Board - 6 Subjects)',
+        defaultClass: 'Class 10 CBSE',
         passingPct: 33,
         subjects: [
             { name: 'English Language & Literature', max: 100, pass: 33, obtained: 88 },
@@ -518,6 +814,7 @@ const CURRICULUM_TEMPLATES = {
     },
     'school-icse': {
         name: 'Class 1–10th (ICSE Board - 6 Subjects)',
+        defaultClass: 'Class 10 ICSE',
         passingPct: 33,
         subjects: [
             { name: 'English Language & Lit', max: 100, pass: 33, obtained: 85 },
@@ -530,6 +827,7 @@ const CURRICULUM_TEMPLATES = {
     },
     'puc-science-pcmb': {
         name: 'PUC Science (PCMB)',
+        defaultClass: '2nd PUC PCMB',
         passingPct: 35,
         subjects: [
             { name: 'Physics', max: 100, pass: 35, obtained: 82 },
@@ -542,6 +840,7 @@ const CURRICULUM_TEMPLATES = {
     },
     'puc-science-pcmc': {
         name: 'PUC Science (PCMC)',
+        defaultClass: '2nd PUC PCMC',
         passingPct: 35,
         subjects: [
             { name: 'Physics', max: 100, pass: 35, obtained: 84 },
@@ -554,6 +853,7 @@ const CURRICULUM_TEMPLATES = {
     },
     'puc-commerce': {
         name: 'PUC Commerce',
+        defaultClass: '2nd PUC Commerce',
         passingPct: 35,
         subjects: [
             { name: 'Accountancy', max: 100, pass: 35, obtained: 90 },
@@ -566,6 +866,7 @@ const CURRICULUM_TEMPLATES = {
     },
     'puc-arts': {
         name: 'PUC Arts / Humanities',
+        defaultClass: '2nd PUC Arts',
         passingPct: 35,
         subjects: [
             { name: 'History', max: 100, pass: 35, obtained: 86 },
@@ -576,21 +877,9 @@ const CURRICULUM_TEMPLATES = {
             { name: 'Language II (Kannada/Hindi)', max: 100, pass: 35, obtained: 84 }
         ]
     },
-    'degree-vtu': {
-        name: 'VTU Engineering (6th Sem CSE)',
-        passingPct: 40,
-        subjects: [
-            { name: 'Software Engineering (21CS61)', max: 100, pass: 40, obtained: 85 },
-            { name: 'Full Stack Development (21CS62)', max: 100, pass: 40, obtained: 88 },
-            { name: 'Computer Networks (21CS63)', max: 100, pass: 40, obtained: 84 },
-            { name: 'Professional Elective (21CS64x)', max: 100, pass: 40, obtained: 82 },
-            { name: 'Open Elective (21CS65x)', max: 100, pass: 40, obtained: 86 },
-            { name: 'Full Stack Dev Lab (21CSL66)', max: 100, pass: 40, obtained: 95 },
-            { name: 'Mini Project (21CSP68)', max: 100, pass: 40, obtained: 96 }
-        ]
-    },
     'degree-autonomous': {
         name: 'Autonomous Degree (B.Sc / BCA / B.Com)',
+        defaultClass: 'BCA / B.Sc Degree',
         passingPct: 40,
         subjects: [
             { name: 'Core Course 1', max: 100, pass: 40, obtained: 85 },
@@ -603,6 +892,7 @@ const CURRICULUM_TEMPLATES = {
     },
     'custom': {
         name: 'Custom Subjects Format',
+        defaultClass: 'Custom Course',
         passingPct: 35,
         subjects: [
             { name: 'Subject 1', max: 100, pass: 35, obtained: 80 },
@@ -740,6 +1030,7 @@ function handleCurriculumChange(mode) {
     const val = select.value;
     const subjectsCard = document.getElementById(`${mode}-subjects-card`);
     const quickContainer = document.getElementById(`container-${mode}-quick-marks`);
+    const classInput = document.getElementById(`${mode}-class`);
 
     if (val === 'quick') {
         if (subjectsCard) subjectsCard.style.display = 'none';
@@ -748,6 +1039,9 @@ function handleCurriculumChange(mode) {
         if (subjectsCard) subjectsCard.style.display = 'flex';
         if (quickContainer) quickContainer.style.display = 'none';
         const tmpl = CURRICULUM_TEMPLATES[val] || CURRICULUM_TEMPLATES['custom'];
+        if (classInput && tmpl && tmpl.defaultClass) {
+            classInput.value = tmpl.defaultClass;
+        }
         const tbody = document.getElementById(`tbody-${mode}-subjects`);
         renderSubjectRows(tbody, tmpl.subjects, mode);
     }
@@ -776,9 +1070,12 @@ function openMarksCardModal(studentId) {
     const s = students.find(item => item.studentId === studentId);
     if (!s) return;
 
+    const catInfo = getStudentAcademicCategory(s);
     document.getElementById('card-student-name').textContent = s.name;
     document.getElementById('card-student-id').textContent = s.studentId;
     document.getElementById('card-student-class').textContent = s.className || 'General';
+    const currBadge = document.getElementById('card-student-curriculum');
+    if (currBadge) currBadge.textContent = `${catInfo.badgeText} Official Coursework`;
 
     let subjects = [];
     if (s.subjectBreakdown) {
@@ -793,7 +1090,6 @@ function openMarksCardModal(studentId) {
     tbody.innerHTML = '';
 
     if (subjects && subjects.length > 0) {
-        document.getElementById('card-student-curriculum').textContent = 'Itemized Multi-Subject Report';
         let totalMax = 0;
         let totalObtained = 0;
 
@@ -1047,7 +1343,7 @@ function openDeleteModal(studentId) {
 function resetAddForm() {
     document.getElementById('form-add-student')?.reset();
     const select = document.getElementById('add-curriculum');
-    if (select) select.value = 'school-state';
+    if (select) select.value = 'vtu-4th';
     handleCurriculumChange('add');
 }
 
@@ -1071,7 +1367,7 @@ function showToast(msg, type = 'info') {
 
     setTimeout(() => {
         toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 300);
+        setTimeout(() => { if (toast && typeof toast.remove === 'function') toast.remove(); }, 300);
     }, 3500);
 }
 

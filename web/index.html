@@ -119,6 +119,12 @@
                             <h3><i class="fa-solid fa-list-check"></i> Recent Students</h3>
                             <button class="btn-text" id="btn-view-all-redirect">View All <i class="fa-solid fa-arrow-right"></i></button>
                         </div>
+                        <div class="category-filter-nav" id="dash-cat-pills" style="margin-bottom: 0.75rem;">
+                            <button class="cat-pill active" data-category="ALL"><i class="fa-solid fa-layer-group"></i> All (<span id="dash-count-all">0</span>)</button>
+                            <button class="cat-pill" data-category="VTU"><i class="fa-solid fa-building-columns"></i> VTU Engg (<span id="dash-count-vtu">0</span>)</button>
+                            <button class="cat-pill" data-category="PUC"><i class="fa-solid fa-graduation-cap"></i> PUC (<span id="dash-count-puc">0</span>)</button>
+                            <button class="cat-pill" data-category="SCHOOL"><i class="fa-solid fa-school"></i> School (<span id="dash-count-school">0</span>)</button>
+                        </div>
                         <div class="table-responsive">
                             <table class="data-table">
                                 <thead>
@@ -191,10 +197,48 @@
             <!-- TAB 2: ALL STUDENTS -->
             <section id="tab-students" class="tab-content">
                 <div class="card">
+                    <!-- ACADEMIC CATEGORY NAVIGATION PILLS -->
+                    <div class="category-filter-nav" id="student-cat-pills">
+                        <button class="cat-pill active" data-category="ALL"><i class="fa-solid fa-layer-group"></i> All Students (<span id="cat-count-all">0</span>)</button>
+                        <button class="cat-pill" data-category="VTU"><i class="fa-solid fa-building-columns"></i> VTU Engineering (<span id="cat-count-vtu">0</span>)</button>
+                        <button class="cat-pill" data-category="PUC"><i class="fa-solid fa-graduation-cap"></i> PUC (11th & 12th) (<span id="cat-count-puc">0</span>)</button>
+                        <button class="cat-pill" data-category="SCHOOL"><i class="fa-solid fa-school"></i> School (1st–10th) (<span id="cat-count-school">0</span>)</button>
+                        <button class="cat-pill" data-category="DEGREE"><i class="fa-solid fa-award"></i> Degree / Autonomous (<span id="cat-count-degree">0</span>)</button>
+                    </div>
+
                     <div class="toolbar">
                         <div class="search-box">
                             <i class="fa-solid fa-magnifying-glass"></i>
                             <input type="text" id="input-search" placeholder="Search by ID, Name, or Class...">
+                        </div>
+                        <div class="filter-box">
+                            <select id="select-category-filter" title="Filter by Board / Curriculum / Semester">
+                                <option value="ALL">All Curricula & Semesters</option>
+                                <optgroup label="VTU Engineering Semesters">
+                                    <option value="vtu-4th">🏛️ VTU 4th Sem (BE / B.Tech)</option>
+                                    <option value="vtu-3rd">🏛️ VTU 3rd Sem (BE / B.Tech)</option>
+                                    <option value="vtu-6th">🏛️ VTU 6th Sem (BE / B.Tech)</option>
+                                    <option value="vtu-5th">🏛️ VTU 5th Sem (BE / B.Tech)</option>
+                                    <option value="vtu-1st-2nd">🏛️ VTU 1st & 2nd Sem (P/C Cycle)</option>
+                                    <option value="vtu-7th-8th">🏛️ VTU 7th & 8th Sem (Final Year)</option>
+                                    <option value="VTU">🏛️ All VTU Students</option>
+                                </optgroup>
+                                <optgroup label="PUC / 11th & 12th">
+                                    <option value="puc-science">🎒 PUC Science (PCMB / PCMC)</option>
+                                    <option value="puc-commerce">🎒 PUC Commerce</option>
+                                    <option value="puc-arts">🎒 PUC Arts / Humanities</option>
+                                    <option value="PUC">🎒 All PUC Students</option>
+                                </optgroup>
+                                <optgroup label="School Education (1st–10th)">
+                                    <option value="school-cbse">🏫 CBSE Board (1st–10th)</option>
+                                    <option value="school-state">🏫 State Board (1st–10th)</option>
+                                    <option value="school-icse">🏫 ICSE Board (1st–10th)</option>
+                                    <option value="SCHOOL">🏫 All School Students</option>
+                                </optgroup>
+                                <optgroup label="Autonomous Degree">
+                                    <option value="degree-autonomous">🎓 Autonomous Degree</option>
+                                </optgroup>
+                            </select>
                         </div>
                         <div class="filter-box">
                             <select id="select-grade-filter">
@@ -495,8 +539,16 @@
                         <div class="form-group">
                             <label for="add-curriculum"><i class="fa-solid fa-graduation-cap"></i> Board / Curriculum Format</label>
                             <select id="add-curriculum" class="form-select">
+                                <optgroup label="VTU Engineering Semesters">
+                                    <option value="vtu-4th" selected>VTU 4th Sem (Math IV, DAA, Microcontrollers, OS, Labs)</option>
+                                    <option value="vtu-3rd">VTU 3rd Sem (Math III, Data Structures, ADE, COA, Labs)</option>
+                                    <option value="vtu-6th">VTU 6th Sem (Software Eng, Full Stack Dev, CN, Labs)</option>
+                                    <option value="vtu-5th">VTU 5th Sem (Automata, Computer Networks, DBMS, AI/ML)</option>
+                                    <option value="vtu-1st-2nd">VTU 1st & 2nd Sem (Physics/Chemistry Cycle, C/Python)</option>
+                                    <option value="vtu-7th-8th">VTU 7th & 8th Sem (Electives, Project, Seminar)</option>
+                                </optgroup>
                                 <optgroup label="Class 1 to 10th (School)">
-                                    <option value="school-state" selected>Class 1–10th (State Board - 6 Subjects)</option>
+                                    <option value="school-state">Class 1–10th (State Board - 6 Subjects)</option>
                                     <option value="school-cbse">Class 1–10th (CBSE Board - 6 Subjects)</option>
                                     <option value="school-icse">Class 1–10th (ICSE Board - 6 Subjects)</option>
                                 </optgroup>
@@ -506,8 +558,7 @@
                                     <option value="puc-commerce">PUC Commerce (Accountancy, Business, Econ, Stats)</option>
                                     <option value="puc-arts">PUC Arts / Humanities (History, Econ, Pol Sci, Soc)</option>
                                 </optgroup>
-                                <optgroup label="Degree / Engineering">
-                                    <option value="degree-vtu">VTU Engineering (6th Sem CSE / Theory & Labs)</option>
+                                <optgroup label="Autonomous Degree">
                                     <option value="degree-autonomous">Autonomous Degree (B.Sc / BCA / B.Com)</option>
                                 </optgroup>
                                 <option value="custom">Custom Subjects List</option>
@@ -606,6 +657,14 @@
                         <div class="form-group">
                             <label for="edit-curriculum"><i class="fa-solid fa-graduation-cap"></i> Board / Curriculum Format</label>
                             <select id="edit-curriculum" class="form-select">
+                                <optgroup label="VTU Engineering Semesters">
+                                    <option value="vtu-4th">VTU 4th Sem (Math IV, DAA, Microcontrollers, OS, Labs)</option>
+                                    <option value="vtu-3rd">VTU 3rd Sem (Math III, Data Structures, ADE, COA, Labs)</option>
+                                    <option value="vtu-6th">VTU 6th Sem (Software Eng, Full Stack Dev, CN, Labs)</option>
+                                    <option value="vtu-5th">VTU 5th Sem (Automata, Computer Networks, DBMS, AI/ML)</option>
+                                    <option value="vtu-1st-2nd">VTU 1st & 2nd Sem (Physics/Chemistry Cycle, C/Python)</option>
+                                    <option value="vtu-7th-8th">VTU 7th & 8th Sem (Electives, Project, Seminar)</option>
+                                </optgroup>
                                 <optgroup label="Class 1 to 10th (School)">
                                     <option value="school-state">Class 1–10th (State Board - 6 Subjects)</option>
                                     <option value="school-cbse">Class 1–10th (CBSE Board - 6 Subjects)</option>
@@ -617,8 +676,7 @@
                                     <option value="puc-commerce">PUC Commerce (Accountancy, Business, Econ, Stats)</option>
                                     <option value="puc-arts">PUC Arts / Humanities (History, Econ, Pol Sci, Soc)</option>
                                 </optgroup>
-                                <optgroup label="Degree / Engineering">
-                                    <option value="degree-vtu">VTU Engineering (6th Sem CSE / Theory & Labs)</option>
+                                <optgroup label="Autonomous Degree">
                                     <option value="degree-autonomous">Autonomous Degree (B.Sc / BCA / B.Com)</option>
                                 </optgroup>
                                 <option value="custom">Custom Subjects List</option>
@@ -774,6 +832,6 @@
     <!-- Toast Notification Container -->
     <div id="toast-container"></div>
 
-    <script src="app.js?v=20261014_rev3"></script>
+    <script src="app.js?v=20261014_rev4"></script>
 </body>
 </html>
