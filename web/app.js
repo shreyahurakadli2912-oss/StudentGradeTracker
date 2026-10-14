@@ -648,19 +648,22 @@ function renderSubjectRows(tbodyElem, subjects, mode) {
         const removeBtn = tr.querySelector('.btn-remove-subject');
 
         function onMarksChange() {
+            if (!maxInput || !obtainedInput) return;
             const m = parseFloat(maxInput.value) || 100;
             const o = parseFloat(obtainedInput.value) || 0;
             const p = parseFloat(subj.pass) || (m * 0.35);
             obtainedInput.max = m;
             const passOk = o >= p;
-            statusPill.textContent = passOk ? 'PASS' : 'FAIL';
-            statusPill.className = `badge ${passOk ? 'grade-A' : 'grade-F'} status-pill`;
+            if (statusPill) {
+                statusPill.textContent = passOk ? 'PASS' : 'FAIL';
+                statusPill.className = `badge ${passOk ? 'grade-A' : 'grade-F'} status-pill`;
+            }
             calculateLiveSummary(mode);
         }
 
-        maxInput.addEventListener('input', onMarksChange);
-        obtainedInput.addEventListener('input', onMarksChange);
-        removeBtn.addEventListener('click', () => {
+        maxInput?.addEventListener('input', onMarksChange);
+        obtainedInput?.addEventListener('input', onMarksChange);
+        removeBtn?.addEventListener('click', () => {
             tr.remove();
             calculateLiveSummary(mode);
         });
@@ -856,8 +859,12 @@ function initModals() {
     const modalCard = document.getElementById('modal-student-card');
 
     document.getElementById('btn-open-add-modal')?.addEventListener('click', () => {
-        resetAddForm();
-        modalAdd.classList.add('show');
+        try {
+            resetAddForm();
+        } catch (e) {
+            console.warn("resetAddForm warning:", e);
+        }
+        if (modalAdd) modalAdd.classList.add('show');
     });
 
     document.getElementById('btn-close-add-modal')?.addEventListener('click', () => modalAdd.classList.remove('show'));
