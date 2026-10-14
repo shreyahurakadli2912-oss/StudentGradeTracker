@@ -524,6 +524,7 @@ function initModals() {
             }
         }
     });
+}
 
 // ==========================================
 // ACADEMIC CURRICULUM TEMPLATES & ENGINE
