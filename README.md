@@ -88,16 +88,16 @@ Password: (blank)
 ### 3. Run the Classic Console CLI
 ```bash
 javac src/*.java
-java src.Main
+java -cp src Main
 ```
 
 ### 4. Run the Test Suites
 ```bash
-# Automated JUnit / Spring Boot tests:
+# Automated Spring Boot REST API tests:
 mvn test
 
 # Classic CLI test suite:
-java src.GradeTrackerTest
+java -cp src GradeTrackerTest
 ```
 
 ---
