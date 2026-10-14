@@ -24,6 +24,7 @@ public class StudentDTO {
 
     private String grade;
     private String status;
+    private String subjectBreakdown;
 
     public StudentDTO() {
     }
@@ -89,5 +90,13 @@ public class StudentDTO {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getSubjectBreakdown() {
+        return subjectBreakdown;
+    }
+
+    public void setSubjectBreakdown(String subjectBreakdown) {
+        this.subjectBreakdown = subjectBreakdown;
     }
 }

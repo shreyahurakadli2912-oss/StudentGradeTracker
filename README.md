@@ -1,163 +1,148 @@
-# Student Grade Tracker
+# 🎓 Smart Student Grade Tracker & Academic Curriculum Engine
 
-A beginner-friendly, menu-driven Java console application built for managing student records, calculating grade letters, generating student reports, and computing class-wide statistics.
+An enterprise-ready, full-stack Academic Performance Tracking & Grade Management System developed for the **CodeAlpha Java Programming Internship**.
 
-Developed for the **CodeAlpha Java Programming Internship**.
-
----
-
-## 📌 Project Overview
-
-The **Student Grade Tracker** allows educators and instructors to easily manage student information. The system stores student details in memory using Java's `ArrayList` data structure and provides features to add, search, update, delete, display records, calculate letter grades, and view comprehensive class performance statistics.
+Features an automated **Multi-Curriculum Subject Engine** supporting School (State, CBSE, ICSE), Pre-University / PUC (Science PCMB/PCMC, Commerce, Arts), and Degree / Engineering (VTU & Autonomous), alongside **Automated VTU Marksheet PDF Extraction**, **Bulk ZIP Archive Processing**, and **Official Printable Student Scorecards**.
 
 ---
 
-## ✨ Features
+## 🌟 Key Features
 
-1. **Interactive Main Menu:** Easy-to-use menu that continues running until explicitly exited.
-2. **Add Student Record:** Accepts unique Student ID, Student Name, and Marks (0 - 100). Includes validation against empty values, duplicate IDs, and invalid numerical inputs.
-3. **View All Students:** Displays registered student records in a clean tabular format showing ID, Name, Marks, and Letter Grade.
-4. **Search Student by ID:** Case-insensitive search returning full details for a student. Handles non-existent or invalid queries gracefully.
-5. **Update Student Details:** Enables updating name and marks while preserving the original Student ID. Recalculates letter grades automatically.
-6. **Delete Student Record:** Removes student records with a confirmation prompt (Y/N) to prevent accidental deletions.
-7. **Calculate Class Statistics:**
-   - Total number of registered students
-   - Total marks sum
-   - Class average marks (formatted to 2 decimal places)
-   - Highest score & top performer(s), with support for ties
-   - Lowest score & lowest performer(s), with support for ties
-   - Empty list protection to prevent division-by-zero errors
-8. **Student Grade Report:** Dedicated report listing all students alongside their letter grades.
-9. **Robust Input Validation & Error Handling:** Prevents crashes caused by non-numeric input, empty inputs, negative marks, marks over 100, or invalid menu choices. Uses `Scanner.nextLine()` with safe parsing to prevent buffer issues.
+### 1. 📚 Multi-Curriculum & Board Template Engine
+- **Class 1 to 10th (Schooling):**
+  - **Karnataka State Board (KSEEB / KSEAB):** 6 core subjects (First Language 125M, Second Language 100M, Third Language 100M, Mathematics 100M, Science 100M, Social Science 100M — Total 625 Marks).
+  - **CBSE (Central Board):** 5 subjects (English, Hindi/Regional, Standard Math, Science, Social Science — Total 500 Marks).
+  - **ICSE (Council for CISCE):** 6 subject groups (English, Second Language, HCG History/Civics/Geography, Science Physics/Chemistry/Biology, Mathematics, Computer Applications — Total 600 Marks).
+- **PUC / Pre-University (11th & 12th):**
+  - **Science (PCMB):** Physics, Chemistry, Mathematics, Biology, English, Kannada/Hindi (Total 600 Marks).
+  - **Science (PCMC):** Physics, Chemistry, Mathematics, Computer Science, English, Kannada/Hindi (Total 600 Marks).
+  - **Commerce:** Accountancy, Business Studies, Economics, Statistics/Computer Science, English, Second Language (Total 600 Marks).
+  - **Arts:** History, Economics, Political Science, Sociology/Psychology, English, Second Language (Total 600 Marks).
+- **Degree / Higher Education:**
+  - **VTU Engineering:** Core engineering subjects, labs, mathematics, with 100-mark scales (40% minimum passing criteria per subject).
+  - **Autonomous Colleges & Universities:** Flexible credit/mark templates.
+  - **Custom Template:** Dynamic `+ Add Subject` row generator for any elective, course code, or exam board.
+- **⚡ Quick Mode:** Single-click toggle for fast direct aggregate entry (0 - 100%) without entering individual subject breakdown.
 
----
+### 2. 🖨️ Official Printable Student Marks Card
+- Generates a formal, printable academic scorecard for each student.
+- Itemized table with Course Name, Maximum Marks, Passing Marks, Marks Obtained, and Subject Status (`PASS` / `FAIL`).
+- Board-specific failure handling: If a student falls below passing threshold in any core subject, the scorecard automatically flags the overall result as `FAILED`.
+- Direct `🖨️ Print Card` integration with clean print-optimized CSS layout.
 
-## 🛠️ Grade Scale Reference
+### 3. 📄 Automated PDF & Bulk ZIP Marksheet Ingestion
+- **VTU 92-Student Result Sheet Parser:** Built-in PDF parser extracting all 92 students directly from institutional examination result sheets using Apache PDFBox regex parsing.
+- **Individual Student Marksheet Support:** Automatically detects single student cards (e.g. USN `1SG21CS045`, Name, Total Marks, SGPA/Percentage).
+- **Bulk ZIP Archive Ingestion:** Upload `.zip` files containing dozens of individual student result cards; the system unzips in-memory, parses every PDF simultaneously, and aggregates the batch into a single preview.
+- **Multi-File Batch Upload:** Select or drag & drop multiple PDF, Excel, and CSV files together in a single operation.
+- **Pre-Commit Interactive Preview:** Review all parsed records, inspect validation errors, preview duplicates, and confirm import with a single click.
 
-| Marks Range | Letter Grade |
-| ----------- | ------------ |
-| 90 – 100    | **A**        |
-| 80 – < 90   | **B**        |
-| 70 – < 80   | **C**        |
-| 60 – < 70   | **D**        |
-| 0 – < 60    | **F**        |
-
----
-
-## 💻 Technologies Used
-
-- **Programming Language:** Java (JDK 8+ / JDK 25 recommended)
-- **Data Structures:** `java.util.ArrayList`, `java.util.List`
-- **Standard Libraries:** `java.util.Scanner`
-- **Architecture:** Object-Oriented Design (Model, Manager, Utility, Main)
+### 4. 📊 Analytics, Reports & Data Export
+- Real-time statistics: Total students, class average, pass percentage, top scorer(s), and grade distribution chart.
+- Multi-dimensional filters: Search by name or USN/ID, filter by Grade (A+, A, B, C, D, F) or Status (PASSED, FAILED).
+- Export in multiple industry formats: **PDF Report**, **Excel (.xlsx)**, and **CSV**.
 
 ---
 
-## 📋 System Requirements
+## 🛠️ Technology Stack
 
-- **Operating System:** Windows 10/11 (or Linux/macOS)
-- **Java Development Kit:** JDK installed (`javac` and `java` commands accessible in PATH).
+| Layer | Technologies |
+|---|---|
+| **Backend** | Java 25 / 17+, Spring Boot 3.2.4, Spring Data JPA, Hibernate, Bean Validation |
+| **Database** | In-Memory H2 Database (with H2 Web Console), JPA Entities |
+| **PDF & Office Processing** | Apache PDFBox 2.0.30, Apache POI 5.2.5 (ooxml), iText PDF |
+| **Frontend** | HTML5, Vanilla CSS3 (Custom Glassmorphism Design System, Micro-animations), Modern JavaScript (ES6+) |
+| **CLI Fallback** | Java Console Application (`Main.java`, `StudentManager.java`) |
 
 ---
 
-## 🚀 How to Compile and Run (Windows)
+## 🚀 Getting Started
 
-Open Command Prompt (`cmd`) or PowerShell in the root directory of the project (`StudentGradeTracker`):
+### Prerequisites
+- JDK 17 or higher (JDK 25 supported)
+- Apache Maven 3.8+
 
-### 1. Compile the Project
-```cmd
-javac src/*.java
+### 1. Clone the Repository
+```bash
+git clone https://github.com/shreyahurakadli2912-oss/StudentGradeTracker.git
+cd StudentGradeTracker
 ```
 
-### 2. Run the Main Application
-```cmd
+### 2. Run the Full-Stack Web Application
+```bash
+mvn spring-boot:run
+```
+Once started, open your browser and navigate to:
+```text
+http://localhost:8080
+```
+
+H2 Database Console is available at:
+```text
+http://localhost:8080/h2-console
+JDBC URL: jdbc:h2:mem:gradetracker
+Username: SA
+Password: (blank)
+```
+
+### 3. Run the Classic Console CLI
+```bash
+javac src/*.java
 java src.Main
 ```
 
-### 3. Run the Automated Test Suite
-```cmd
+### 4. Run the Test Suites
+```bash
+# Automated JUnit / Spring Boot tests:
+mvn test
+
+# Classic CLI test suite:
 java src.GradeTrackerTest
 ```
 
 ---
 
-## 🖥️ Example Interaction & Sample Output
+## 📡 REST API Reference
 
-```text
-=======================================================
-     WELCOME TO STUDENT GRADE TRACKER SYSTEM           
-=======================================================
-
----------------- MAIN MENU ----------------
-1. Add Student
-2. View All Students
-3. Search Student by ID
-4. Update Student
-5. Delete Student
-6. Calculate Class Statistics
-7. View Student Grade Report
-8. Exit
--------------------------------------------
-Enter your choice (1-8): 1
-
---- ADD NEW STUDENT ---
-Enter Student ID: S101
-Enter Student Name: Alice Johnson
-Enter Marks (0 - 100): 94.5
-Success: Student 'Alice Johnson' (ID: S101) added successfully with Grade 'A'.
-
----------------- MAIN MENU ----------------
-1. Add Student
-2. View All Students
-...
-Enter your choice (1-8): 2
-
---- REGISTERED STUDENTS LIST ---
-+--------------+------------------------+----------+--------------+
-| Student ID   | Student Name           | Marks    | Letter Grade |
-+--------------+------------------------+----------+--------------+
-| S101         | Alice Johnson          | 94.50    | A            |
-+--------------+------------------------+----------+--------------+
-
----------------- MAIN MENU ----------------
-1. Add Student
-2. View All Students
-...
-Enter your choice (1-8): 6
-
-=======================================================
-               CLASS STATISTICS SUMMARY                 
-=======================================================
-Total Number of Students : 1
-Total Marks Accumulated  : 94.50
-Average Marks            : 94.50
--------------------------------------------------------
-Highest Marks            : 94.50
-Highest Achiever(s)      : Alice Johnson (ID: S101)
--------------------------------------------------------
-Lowest Marks             : 94.50
-Lowest Achiever(s)       : Alice Johnson (ID: S101)
-=======================================================
-```
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/students` | Retrieve students (supports `search`, `grade`, `status`, `sortBy`, `sortOrder`) |
+| `GET` | `/api/students/{studentId}` | Retrieve a specific student by Student ID / USN |
+| `POST` | `/api/students` | Create student record (supports JSON `subjectBreakdown`) |
+| `PUT` | `/api/students/{studentId}` | Update student details and subject breakdown |
+| `DELETE` | `/api/students/{studentId}` | Delete a student by ID |
+| `DELETE` | `/api/students/all` | Clear all student records |
+| `GET` | `/api/students/stats` | Class performance analytics and metrics |
+| `POST` | `/api/students/import/preview` | Multipart file upload preview (single PDF, multi-file, or ZIP archive) |
+| `POST` | `/api/students/import/confirm` | Confirm batch import to database |
+| `GET` | `/api/students/export/pdf` | Download PDF grade report |
+| `GET` | `/api/students/export/excel` | Download Excel (.xlsx) report |
+| `GET` | `/api/students/export/csv` | Download CSV grade export |
 
 ---
 
-## ⚠️ Known Limitations
-
-- **In-Memory Data Storage:** Records are stored in memory using an `ArrayList`. Closing the application resets the data. Persistent storage (file/database) is omitted as per project constraints.
-- **Console Interface:** Interactive user interface is text-based command-line only.
-
----
-
-## 📁 Project Structure
+## 📁 Repository Structure
 
 ```
 StudentGradeTracker/
 ├── src/
-│   ├── Main.java               # Main entry point and menu control loop
-│   ├── Student.java            # Student model class with grade logic
-│   ├── StudentManager.java     # Operations: add, search, update, delete, stats
-│   ├── InputValidator.java     # Safe input reading and validation utilities
-│   └── GradeTrackerTest.java   # Automated unit and integration test suite
-└── README.md                   # Comprehensive project documentation
+│   ├── main/java/com/codealpha/gradetracker/
+│   │   ├── StudentGradeTrackerApplication.java  # Spring Boot entry point
+│   │   ├── controller/                         # REST API Controllers
+│   │   ├── dto/                                # Request & Response DTOs
+│   │   ├── model/                              # JPA Student Entities
+│   │   ├── repository/                         # Spring Data JPA Repositories
+│   │   └── service/                            # Business Logic & PDF/ZIP Parsers
+│   └── (classic CLI classes: Main.java, Student.java, StudentManager.java, InputValidator.java)
+├── web/                                        # Modern Glassmorphic Web App
+│   ├── index.html                              # Web Dashboard & Modals
+│   ├── styles.css                              # Design System, Themes & Print Styles
+│   └── app.js                                  # Interactive State & Real-Time Calc Engine
+├── pom.xml                                     # Maven Dependencies & Build Configuration
+└── README.md                                   # Comprehensive Documentation
 ```
+
+---
+
+## ⚖️ License
+This project is open-source and developed under the **CodeAlpha Java Programming Internship**.

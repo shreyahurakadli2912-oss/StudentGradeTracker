@@ -188,6 +188,7 @@ public class StudentService {
             resolvedStatus = gradeCalculator.calculateStatus(dto.getMarks());
         }
         entity.setStatus(resolvedStatus);
+        entity.setSubjectBreakdown(dto.getSubjectBreakdown());
 
         StudentEntity saved = repository.save(entity);
         return toDTO(saved);
@@ -216,6 +217,10 @@ public class StudentService {
             entity.setStatus(s.startsWith("FAIL") ? "FAILED" : (s.startsWith("PASS") ? "PASSED" : s));
         } else {
             entity.setStatus(gradeCalculator.calculateStatus(dto.getMarks()));
+        }
+
+        if (dto.getSubjectBreakdown() != null) {
+            entity.setSubjectBreakdown(dto.getSubjectBreakdown());
         }
 
         StudentEntity updated = repository.save(entity);
@@ -1327,6 +1332,7 @@ public class StudentService {
         dto.setMarks(entity.getMarks());
         dto.setGrade(entity.getGrade());
         dto.setStatus(entity.getStatus());
+        dto.setSubjectBreakdown(entity.getSubjectBreakdown());
         return dto;
     }
 }

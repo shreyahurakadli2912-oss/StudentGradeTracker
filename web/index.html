@@ -462,40 +462,108 @@
     </div>
 
     <!-- MODAL: ADD STUDENT -->
+    <!-- MODAL: ADD STUDENT -->
     <div class="modal-backdrop" id="modal-add-student">
-        <div class="modal">
+        <div class="modal modal-lg">
             <div class="modal-header">
                 <h3><i class="fa-solid fa-user-plus"></i> Add New Student</h3>
                 <button class="btn-close" id="btn-close-add-modal">&times;</button>
             </div>
             <form id="form-add-student">
                 <div class="modal-body">
-                    <div class="form-group">
-                        <label for="add-id">Student ID <span class="required">*</span></label>
-                        <input type="text" id="add-id" placeholder="e.g. S106" required>
-                        <small class="error-msg" id="err-add-id"></small>
+                    <div class="form-row-2col">
+                        <div class="form-group">
+                            <label for="add-id">Student ID / Roll No / USN <span class="required">*</span></label>
+                            <input type="text" id="add-id" placeholder="e.g. 1RG23CS001 or S106" required>
+                            <small class="error-msg" id="err-add-id"></small>
+                        </div>
+                        <div class="form-group">
+                            <label for="add-name">Student Full Name <span class="required">*</span></label>
+                            <input type="text" id="add-name" placeholder="e.g. Frank Wright" required>
+                            <small class="error-msg" id="err-add-name"></small>
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="add-name">Student Full Name <span class="required">*</span></label>
-                        <input type="text" id="add-name" placeholder="e.g. Frank Wright" required>
-                        <small class="error-msg" id="err-add-name"></small>
+                    <div class="form-row-2col">
+                        <div class="form-group">
+                            <label for="add-class">Class / Section / Semester</label>
+                            <input type="text" id="add-class" placeholder="e.g. 10th A, 1st PUC, or 6th Sem" value="10A">
+                        </div>
+                        <div class="form-group">
+                            <label for="add-curriculum"><i class="fa-solid fa-graduation-cap"></i> Board / Curriculum Format</label>
+                            <select id="add-curriculum" class="form-select">
+                                <optgroup label="Class 1 to 10th (School)">
+                                    <option value="school-state" selected>Class 1–10th (State Board - 6 Subjects)</option>
+                                    <option value="school-cbse">Class 1–10th (CBSE Board - 6 Subjects)</option>
+                                    <option value="school-icse">Class 1–10th (ICSE Board - 6 Subjects)</option>
+                                </optgroup>
+                                <optgroup label="PUC / 11th & 12th">
+                                    <option value="puc-science-pcmb">PUC Science (PCMB - Physics, Chem, Math, Bio)</option>
+                                    <option value="puc-science-pcmc">PUC Science (PCMC - Physics, Chem, Math, Comp Sci)</option>
+                                    <option value="puc-commerce">PUC Commerce (Accountancy, Business, Econ, Stats)</option>
+                                    <option value="puc-arts">PUC Arts / Humanities (History, Econ, Pol Sci, Soc)</option>
+                                </optgroup>
+                                <optgroup label="Degree / Engineering">
+                                    <option value="degree-vtu">VTU Engineering (6th Sem CSE / Theory & Labs)</option>
+                                    <option value="degree-autonomous">Autonomous Degree (B.Sc / BCA / B.Com)</option>
+                                </optgroup>
+                                <option value="custom">Custom Subjects List</option>
+                                <option value="quick">⚡ Quick Mode (Direct 0–100 Aggregate Marks)</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="add-class">Class / Section</label>
-                        <input type="text" id="add-class" placeholder="e.g. 10A" value="10A">
+                    <!-- MULTI-SUBJECT CONTAINER -->
+                    <div class="subjects-card" id="add-subjects-card">
+                        <div class="subjects-card-header">
+                            <h4><i class="fa-solid fa-book-open"></i> Subjects & Marks Entry</h4>
+                            <button type="button" class="btn btn-secondary btn-sm" id="btn-add-subject-row">
+                                <i class="fa-solid fa-plus"></i> Add Subject
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="subjects-table">
+                                <thead>
+                                    <tr>
+                                        <th>Subject Name</th>
+                                        <th style="width: 90px; text-align: center;">Max</th>
+                                        <th style="width: 100px; text-align: center;">Obtained</th>
+                                        <th style="width: 85px; text-align: center;">Status</th>
+                                        <th style="width: 40px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-add-subjects">
+                                    <!-- Rendered dynamically based on curriculum -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
-                    <div class="form-group">
+                    <!-- DIRECT QUICK MARKS CONTAINER (Hidden by default, shown for Quick Mode) -->
+                    <div class="form-group" id="container-add-quick-marks" style="display: none;">
                         <label for="add-marks">Marks (0 to 100) <span class="required">*</span></label>
-                        <input type="number" id="add-marks" step="0.1" min="0" max="100" placeholder="e.g. 88.5" required>
+                        <input type="number" id="add-marks" step="0.1" min="0" max="100" placeholder="e.g. 88.5">
                         <small class="error-msg" id="err-add-marks"></small>
                     </div>
 
-                    <div class="grade-preview-box">
-                        <span>Calculated Grade:</span>
-                        <span class="badge grade-placeholder" id="add-grade-preview">--</span>
+                    <!-- LIVE SCORECARD BANNER -->
+                    <div class="live-summary-card" id="add-live-summary">
+                        <div class="live-summary-item">
+                            <span>Total Marks</span>
+                            <strong id="add-summary-total">0 / 0</strong>
+                        </div>
+                        <div class="live-summary-item">
+                            <span>Aggregate (%)</span>
+                            <strong id="add-summary-pct">0.00%</strong>
+                        </div>
+                        <div class="live-summary-item">
+                            <span>Grade</span>
+                            <div><span class="badge grade-placeholder" id="add-summary-grade">--</span></div>
+                        </div>
+                        <div class="live-summary-item">
+                            <span>Result Status</span>
+                            <div><span class="badge grade-placeholder" id="add-summary-status">--</span></div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -508,38 +576,105 @@
 
     <!-- MODAL: EDIT STUDENT -->
     <div class="modal-backdrop" id="modal-edit-student">
-        <div class="modal">
+        <div class="modal modal-lg">
             <div class="modal-header">
                 <h3><i class="fa-solid fa-user-pen"></i> Edit Student Record</h3>
                 <button class="btn-close" id="btn-close-edit-modal">&times;</button>
             </div>
             <form id="form-edit-student">
                 <div class="modal-body">
-                    <div class="form-group">
-                        <label>Student ID (Read-only)</label>
-                        <input type="text" id="edit-id" readonly class="input-readonly">
+                    <div class="form-row-2col">
+                        <div class="form-group">
+                            <label>Student ID (Read-only)</label>
+                            <input type="text" id="edit-id" readonly class="input-readonly">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-name">Student Full Name <span class="required">*</span></label>
+                            <input type="text" id="edit-name" required>
+                            <small class="error-msg" id="err-edit-name"></small>
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="edit-name">Student Full Name <span class="required">*</span></label>
-                        <input type="text" id="edit-name" required>
-                        <small class="error-msg" id="err-edit-name"></small>
+                    <div class="form-row-2col">
+                        <div class="form-group">
+                            <label for="edit-class">Class / Section / Semester</label>
+                            <input type="text" id="edit-class">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-curriculum"><i class="fa-solid fa-graduation-cap"></i> Board / Curriculum Format</label>
+                            <select id="edit-curriculum" class="form-select">
+                                <optgroup label="Class 1 to 10th (School)">
+                                    <option value="school-state">Class 1–10th (State Board - 6 Subjects)</option>
+                                    <option value="school-cbse">Class 1–10th (CBSE Board - 6 Subjects)</option>
+                                    <option value="school-icse">Class 1–10th (ICSE Board - 6 Subjects)</option>
+                                </optgroup>
+                                <optgroup label="PUC / 11th & 12th">
+                                    <option value="puc-science-pcmb">PUC Science (PCMB - Physics, Chem, Math, Bio)</option>
+                                    <option value="puc-science-pcmc">PUC Science (PCMC - Physics, Chem, Math, Comp Sci)</option>
+                                    <option value="puc-commerce">PUC Commerce (Accountancy, Business, Econ, Stats)</option>
+                                    <option value="puc-arts">PUC Arts / Humanities (History, Econ, Pol Sci, Soc)</option>
+                                </optgroup>
+                                <optgroup label="Degree / Engineering">
+                                    <option value="degree-vtu">VTU Engineering (6th Sem CSE / Theory & Labs)</option>
+                                    <option value="degree-autonomous">Autonomous Degree (B.Sc / BCA / B.Com)</option>
+                                </optgroup>
+                                <option value="custom">Custom Subjects List</option>
+                                <option value="quick">⚡ Quick Mode (Direct 0–100 Aggregate Marks)</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="edit-class">Class / Section</label>
-                        <input type="text" id="edit-class">
+                    <!-- MULTI-SUBJECT CONTAINER -->
+                    <div class="subjects-card" id="edit-subjects-card">
+                        <div class="subjects-card-header">
+                            <h4><i class="fa-solid fa-book-open"></i> Subjects & Marks Entry</h4>
+                            <button type="button" class="btn btn-secondary btn-sm" id="btn-edit-add-subject-row">
+                                <i class="fa-solid fa-plus"></i> Add Subject
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="subjects-table">
+                                <thead>
+                                    <tr>
+                                        <th>Subject Name</th>
+                                        <th style="width: 90px; text-align: center;">Max</th>
+                                        <th style="width: 100px; text-align: center;">Obtained</th>
+                                        <th style="width: 85px; text-align: center;">Status</th>
+                                        <th style="width: 40px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-edit-subjects">
+                                    <!-- Rendered dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
-                    <div class="form-group">
+                    <!-- DIRECT QUICK MARKS CONTAINER -->
+                    <div class="form-group" id="container-edit-quick-marks" style="display: none;">
                         <label for="edit-marks">Marks (0 to 100) <span class="required">*</span></label>
-                        <input type="number" id="edit-marks" step="0.1" min="0" max="100" required>
+                        <input type="number" id="edit-marks" step="0.1" min="0" max="100">
                         <small class="error-msg" id="err-edit-marks"></small>
                     </div>
 
-                    <div class="grade-preview-box">
-                        <span>Calculated Grade:</span>
-                        <span class="badge grade-placeholder" id="edit-grade-preview">--</span>
+                    <!-- LIVE SCORECARD BANNER -->
+                    <div class="live-summary-card" id="edit-live-summary">
+                        <div class="live-summary-item">
+                            <span>Total Marks</span>
+                            <strong id="edit-summary-total">0 / 0</strong>
+                        </div>
+                        <div class="live-summary-item">
+                            <span>Aggregate (%)</span>
+                            <strong id="edit-summary-pct">0.00%</strong>
+                        </div>
+                        <div class="live-summary-item">
+                            <span>Grade</span>
+                            <div><span class="badge grade-placeholder" id="edit-summary-grade">--</span></div>
+                        </div>
+                        <div class="live-summary-item">
+                            <span>Result Status</span>
+                            <div><span class="badge grade-placeholder" id="edit-summary-status">--</span></div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -547,6 +682,71 @@
                     <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL: OFFICIAL STUDENT MARKS CARD VIEW -->
+    <div class="modal-backdrop" id="modal-student-card">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-file-invoice"></i> Student Marks Card</h3>
+                <button class="btn-close" id="btn-close-card-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="marks-card-preview" id="marks-card-printable">
+                    <div class="marks-card-header">
+                        <h2>ACADEMIC PERFORMANCE STATEMENT</h2>
+                        <p id="card-institution-subtitle">Official Student Grade & Marks Statement</p>
+                    </div>
+                    <div class="marks-card-meta">
+                        <div><strong>Student Name:</strong> <span id="card-student-name">--</span></div>
+                        <div><strong>Student ID / USN:</strong> <span id="card-student-id">--</span></div>
+                        <div><strong>Class / Section:</strong> <span id="card-student-class">--</span></div>
+                        <div><strong>Curriculum / Board:</strong> <span id="card-student-curriculum">Standard</span></div>
+                    </div>
+                    <table class="marks-card-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Subject Title</th>
+                                <th style="text-align: center;">Max Marks</th>
+                                <th style="text-align: center;">Marks Obtained</th>
+                                <th style="text-align: center;">Percentage</th>
+                                <th style="text-align: center;">Result</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-card-subjects">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                    <div class="marks-card-footer-stats">
+                        <div class="live-summary-item">
+                            <span>Total Marks</span>
+                            <strong id="card-total-marks">0 / 0</strong>
+                        </div>
+                        <div class="live-summary-item">
+                            <span>Aggregate (%)</span>
+                            <strong id="card-aggregate-pct">0.00%</strong>
+                        </div>
+                        <div class="live-summary-item">
+                            <span>Final Grade</span>
+                            <div><span class="badge" id="card-final-grade">--</span></div>
+                        </div>
+                        <div class="live-summary-item">
+                            <span>Overall Result</span>
+                            <div><span class="badge" id="card-final-status">--</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="window.print()">
+                    <i class="fa-solid fa-print"></i> Print Marks Card
+                </button>
+                <button type="button" class="btn btn-primary" id="btn-close-card-modal-footer">
+                    Close
+                </button>
+            </div>
         </div>
     </div>
 

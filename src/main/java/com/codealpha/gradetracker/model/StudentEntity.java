@@ -40,6 +40,9 @@ public class StudentEntity {
     @Column(name = "status", nullable = false)
     private String status;
 
+    @Column(name = "subject_breakdown", length = 4000)
+    private String subjectBreakdown;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -141,5 +144,13 @@ public class StudentEntity {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getSubjectBreakdown() {
+        return subjectBreakdown;
+    }
+
+    public void setSubjectBreakdown(String subjectBreakdown) {
+        this.subjectBreakdown = subjectBreakdown;
     }
 }
