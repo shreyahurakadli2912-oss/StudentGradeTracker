@@ -488,44 +488,6 @@ function initSearchFilter() {
     searchInput?.addEventListener('change', loadStudentsFromBackend);
 }
 
-// Modals Setup
-function initModals() {
-    const modalAdd = document.getElementById('modal-add-student');
-    const modalEdit = document.getElementById('modal-edit-student');
-    const modalDelete = document.getElementById('modal-delete-confirm');
-
-    document.getElementById('btn-open-add-modal')?.addEventListener('click', () => {
-        resetAddForm();
-        modalAdd.classList.add('show');
-    });
-
-    document.getElementById('btn-close-add-modal')?.addEventListener('click', () => modalAdd.classList.remove('show'));
-    document.getElementById('btn-cancel-add-modal')?.addEventListener('click', () => modalAdd.classList.remove('show'));
-
-    document.getElementById('btn-close-edit-modal')?.addEventListener('click', () => modalEdit.classList.remove('show'));
-    document.getElementById('btn-cancel-edit-modal')?.addEventListener('click', () => modalEdit.classList.remove('show'));
-
-    document.getElementById('btn-close-delete-modal')?.addEventListener('click', () => modalDelete.classList.remove('show'));
-    document.getElementById('btn-cancel-delete')?.addEventListener('click', () => modalDelete.classList.remove('show'));
-
-    document.getElementById('btn-confirm-delete')?.addEventListener('click', async () => {
-        if (studentToDelete) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/${encodeURIComponent(studentToDelete.studentId)}`, {
-                    method: 'DELETE'
-                });
-                if (!response.ok) throw new Error('Failed to delete student');
-                modalDelete.classList.remove('show');
-                showToast(`Student ${studentToDelete.name} deleted successfully!`, 'success');
-                studentToDelete = null;
-                loadStudentsFromBackend();
-            } catch (err) {
-                showToast(err.message, 'error');
-            }
-        }
-    });
-}
-
 // ==========================================
 // ACADEMIC CURRICULUM TEMPLATES & ENGINE
 // ==========================================
