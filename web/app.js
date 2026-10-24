@@ -474,7 +474,7 @@ function initBulkImport() {
         const validRows = parsedPreviewData.rows.filter(r => r.valid).map(r => ({
             studentId: r.studentId,
             name: r.name,
-            className: r.className || '10A',
+            className: r.className || 'General',
             marks: parseFloat(r.marks),
             grade: r.grade,
             status: r.status

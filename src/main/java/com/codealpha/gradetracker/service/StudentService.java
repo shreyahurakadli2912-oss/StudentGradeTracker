@@ -498,12 +498,24 @@ public class StudentService {
         int rowNum = 1;
         for (CSVRecord record : csvParser) {
             rowNum++;
-            String id = getRecordValue(record, "studentId", "id");
-            String name = getRecordValue(record, "name", "studentName");
-            String className = getRecordValue(record, "className", "class", "section");
-            String marksStr = getRecordValue(record, "marks", "score");
+            String id = getRecordValue(record, "studentId", "id", "usn", "rollno", "roll_no", "roll no", "regno", "reg_no", "student_id", "student id", "code");
+            String name = getRecordValue(record, "name", "studentName", "student_name", "student name", "fullName", "full_name", "full name", "candidate_name", "candidate name", "candidate");
+            String className = getRecordValue(record, "className", "class", "standard", "std", "grade", "section", "sec", "semester", "sem", "branch", "course", "program", "stream", "dept", "department");
+            String marksStr = getRecordValue(record, "marks", "score", "percentage", "percent", "aggregate", "result", "marksobtained", "marks_obtained", "marks obtained", "totalmarks", "total_marks", "total marks", "total");
 
-            ImportRowResultDTO row = validateRow(rowNum, id, name, className, marksStr);
+            // Positional fallback if headers did not match standard keywords
+            if ((id == null || name == null || marksStr == null) && record.size() >= 3) {
+                if (id == null) id = record.get(0);
+                if (name == null) name = record.get(1);
+                if (record.size() >= 4) {
+                    if (className == null) className = record.get(2);
+                    if (marksStr == null) marksStr = record.get(3);
+                } else {
+                    if (marksStr == null) marksStr = record.get(2);
+                }
+            }
+
+            ImportRowResultDTO row = validateRow(rowNum, id, formatStudentName(name), className, marksStr);
             if (row != null && isNotBlacklistedId(row.getStudentId())) {
                 rows.add(row);
             }
@@ -512,11 +524,49 @@ public class StudentService {
     }
 
     private String getRecordValue(CSVRecord record, String... possibleHeaders) {
+        if (record == null) return null;
         for (String header : possibleHeaders) {
             if (record.isMapped(header)) {
-                return record.get(header);
+                String val = record.get(header);
+                if (val != null && !val.trim().isEmpty()) {
+                    return val.trim();
+                }
             }
         }
+        try {
+            java.util.Map<String, Integer> headerMap = record.getParser().getHeaderMap();
+            if (headerMap != null) {
+                // Pass 1: exact normalized match
+                for (Map.Entry<String, Integer> entry : headerMap.entrySet()) {
+                    String cleanActual = entry.getKey().replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
+                    if (cleanActual.isEmpty()) continue;
+                    for (String expected : possibleHeaders) {
+                        String cleanExpected = expected.replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
+                        if (cleanExpected.isEmpty()) continue;
+                        if (cleanActual.equals(cleanExpected)) {
+                            String val = record.get(entry.getValue());
+                            if (val != null && !val.trim().isEmpty()) {
+                                return val.trim();
+                            }
+                        }
+                    }
+                }
+                // Pass 2: substring match (cleanExpected must be at least 4 characters to avoid false positives)
+                for (Map.Entry<String, Integer> entry : headerMap.entrySet()) {
+                    String cleanActual = entry.getKey().replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
+                    if (cleanActual.isEmpty()) continue;
+                    for (String expected : possibleHeaders) {
+                        String cleanExpected = expected.replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
+                        if (cleanExpected.length() >= 4 && cleanActual.contains(cleanExpected)) {
+                            String val = record.get(entry.getValue());
+                            if (val != null && !val.trim().isEmpty()) {
+                                return val.trim();
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
         return null;
     }
 
@@ -538,7 +588,7 @@ public class StudentService {
                         idCol = cell.getColumnIndex();
                     } else if (val.contains("name") || val.contains("student name") || val.contains("title")) {
                         nameCol = cell.getColumnIndex();
-                    } else if (val.contains("class") || val.contains("section") || val.contains("sec") || val.contains("sem")) {
+                    } else if (val.contains("class") || val.contains("standard") || val.contains("std") || val.contains("section") || val.contains("sec") || val.contains("sem")) {
                         classCol = cell.getColumnIndex();
                     } else if (val.equals("%") || val.contains("percent") || val.contains("pct") || val.contains("aggregate")) {
                         marksCol = cell.getColumnIndex();
@@ -1157,7 +1207,18 @@ public class StudentService {
         row.setRowNumber(rowNum);
         row.setStudentId(id);
         row.setName(name);
-        row.setClassName(className != null && !className.trim().isEmpty() ? className.trim() : "10A");
+
+        String finalClass = className != null ? className.trim() : "";
+        if (finalClass.isEmpty() || "10A".equalsIgnoreCase(finalClass)) {
+            if (id != null && (id.matches("(?i)^1[A-Z]{2}\\d{2}[A-Z0-9]+$") || id.toLowerCase().contains("vtu"))) {
+                finalClass = "VTU Engineering";
+            } else if (id != null && (id.toLowerCase().contains("puc") || id.toLowerCase().contains("12th") || id.toLowerCase().contains("11th"))) {
+                finalClass = "PUC";
+            } else if (finalClass.isEmpty()) {
+                finalClass = "General";
+            }
+        }
+        row.setClassName(finalClass);
 
         if (id == null || id.trim().isEmpty()) {
             row.setValid(false);
@@ -1178,7 +1239,50 @@ public class StudentService {
         }
 
         try {
-            double marks = Double.parseDouble(marksStr.trim());
+            String cleanMarks = marksStr.trim().replace("%", "").trim();
+            double marks;
+            if (cleanMarks.contains("/")) {
+                String[] parts = cleanMarks.split("/");
+                double obt = Double.parseDouble(parts[0].trim());
+                double max = Double.parseDouble(parts[1].trim());
+                if (max <= 0) {
+                    row.setValid(false);
+                    row.setErrorReason("Maximum marks must be greater than 0.");
+                    return row;
+                }
+                marks = (obt / max) * 100.0;
+            } else {
+                marks = Double.parseDouble(cleanMarks);
+                // If marks is total marks > 100 (e.g. 540 out of 600 or 560 out of 625), normalize to percentage
+                if (marks > 100.0) {
+                    boolean isSslc = (finalClass.toLowerCase().contains("state") || finalClass.toLowerCase().contains("sslc") || (id != null && id.toLowerCase().contains("sslc")));
+                    if (isSslc && marks <= 625.0) {
+                        marks = (marks / 625.0) * 100.0;
+                    } else if (marks <= 150.0) {
+                        marks = (marks / 150.0) * 100.0;
+                    } else if (marks <= 200.0) {
+                        marks = (marks / 200.0) * 100.0;
+                    } else if (marks <= 300.0) {
+                        marks = (marks / 300.0) * 100.0;
+                    } else if (marks <= 400.0) {
+                        marks = (marks / 400.0) * 100.0;
+                    } else if (marks <= 500.0) {
+                        marks = (marks / 500.0) * 100.0;
+                    } else if (marks <= 600.0) {
+                        marks = (marks / 600.0) * 100.0;
+                    } else if (marks <= 625.0) {
+                        marks = (marks / 625.0) * 100.0;
+                    } else if (marks <= 800.0) {
+                        marks = (marks / 800.0) * 100.0;
+                    } else if (marks <= 900.0) {
+                        marks = (marks / 900.0) * 100.0;
+                    } else if (marks <= 1000.0) {
+                        marks = (marks / 1000.0) * 100.0;
+                    }
+                }
+            }
+            marks = Math.round(marks * 100.0) / 100.0;
+
             if (!gradeCalculator.isValidMarks(marks)) {
                 row.setValid(false);
                 row.setErrorReason("Marks must be between 0 and 100 (Found: " + marks + ").");
